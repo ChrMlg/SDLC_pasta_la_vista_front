@@ -9,7 +9,6 @@ export default function ClienteMenuPage() {
   const [busqueda, setBusqueda] = useState("");
   const [carrito, setCarrito] = useState<{ id: number; nombre: string; precio: number }[]>([]);
 
-  // Base de datos de platillos del cliente basada fielmente en la captura
   const platillos = [
     { id: 1, nombre: "Pasta al pesto", categoria: "Plato fuerte", precio: 12.50, disponible: true },
     { id: 2, nombre: "Bruschettas", categoria: "Entrada", precio: 6.50, disponible: true },
@@ -21,12 +20,10 @@ export default function ClienteMenuPage() {
     { id: 8, nombre: "Café de la casa", categoria: "Bebida", precio: 2.75, disponible: true },
   ];
 
-  // Función para agregar al carrito
   const agregarAlCarrito = (platillo: { id: number; nombre: string; precio: number }) => {
     setCarrito([...carrito, platillo]);
   };
 
-  // Filtrado dinámico
   const platillosFiltrados = platillos.filter((item) => {
     const coincideCategoria = 
       categoriaSeleccionada === "Todas" || 
