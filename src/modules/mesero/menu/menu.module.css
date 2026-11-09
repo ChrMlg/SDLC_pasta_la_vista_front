@@ -1,0 +1,238 @@
+.container {
+  padding: 40px;
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #F7F8F5;
+  min-height: 100vh;
+  color: #1c1c1c;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.headerSection {
+  margin-bottom: 24px;
+}
+
+.tagTop {
+  font-size: 11px;
+  font-weight: bold;
+  color: #795548;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.mainTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #173B2B;
+  margin: 4px 0;
+}
+
+.subText {
+  font-size: 14px;
+  color: #66706B;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4A5568;
+}
+
+.selectField, .inputField {
+  padding: 10px 14px;
+  border: 1px solid #CBD5E0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+
+.searchWrapper {
+  margin-bottom: 20px;
+}
+
+.tabsRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #E2E5DF;
+  padding-bottom: 12px;
+}
+
+.tabBtn {
+  background: #EDF2F7;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4A5568;
+  cursor: pointer;
+}
+
+.tabBtnActive {
+  background: #173B2B;
+  color: white;
+}
+
+.cardList {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border: 1px solid #E2E5DF;
+  margin-bottom: 80px;
+}
+
+.dishRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #E2E5DF;
+}
+
+.dishInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dishThumb {
+  width: 40px;
+  height: 40px;
+  background: #E5E7EB;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #D1D5DB;
+}
+
+.dishThumbInner {
+  width: 14px;
+  height: 14px;
+  background: #9CA3AF;
+  border-radius: 50%;
+}
+
+.dishName {
+  font-weight: 600;
+  color: #1A202C;
+  font-size: 15px;
+}
+
+.dishCategory {
+  font-size: 12px;
+  color: #718096;
+}
+
+.dishRight {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.dishPrice {
+  font-weight: 600;
+  color: #2D3748;
+  font-size: 15px;
+}
+
+.btnAdd {
+  background: #173B2B;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnAdd:hover {
+  background: #10291e;
+}
+
+.btnDisabled {
+  background: #E5E7EB;
+  color: #9CA3AF;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+.badgeUnavailable {
+  color: #9B1C1C;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.listFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 12px;
+  font-size: 13px;
+  color: #718096;
+}
+
+.btnReviews {
+  background: #fff;
+  border: 1px solid #CBD5E0;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #4A5568;
+  cursor: pointer;
+}
+
+/* Barra de Carrito Fija abajo */
+.cartBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1C1C1C;
+  color: white;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+  z-index: 100;
+}
+
+.cartInfo {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.btnCartSubmit {
+  background: #173B2B;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
