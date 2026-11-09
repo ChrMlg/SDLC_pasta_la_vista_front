@@ -1,0 +1,345 @@
+.container {
+  padding: 30px 40px;
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #F7F8F5;
+  min-height: 100vh;
+  color: #1c1c1c;
+  max-width: 100%; /* Ampliado a ancho completo para PC */
+  margin: 0 auto;
+}
+
+.topRoute {
+  text-align: right;
+  font-family: monospace;
+  font-size: 12px;
+  color: #66706B;
+  background: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  float: right;
+  border: 1px solid #E2E5DF;
+  margin-bottom: 20px;
+}
+
+.headerSection {
+  margin-bottom: 24px;
+  clear: both;
+}
+
+.tagTop {
+  font-size: 11px;
+  font-weight: bold;
+  color: #795548;
+  letter-spacing: 0.5px;
+}
+
+.mainTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #173B2B;
+  margin: 4px 0;
+}
+
+.subText {
+  font-size: 14px;
+  color: #66706B;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border: 1px solid #E2E5DF;
+  margin-bottom: 50px;
+}
+
+.cardHeader {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #E2E5DF;
+  padding-bottom: 16px;
+}
+
+.catalogTag {
+  font-size: 11px;
+  font-weight: bold;
+  color: #B58742;
+  letter-spacing: 0.5px;
+}
+
+.catalogTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #173B2B;
+  margin: 4px 0;
+}
+
+.catalogSub {
+  font-size: 14px;
+  color: #66706B;
+}
+
+.filterRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4A5568;
+}
+
+.inputField, .selectField {
+  padding: 10px 14px;
+  border: 1px solid #CBD5E0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  width: 100%;
+}
+
+.inputField:focus, .selectField:focus {
+  border-color: #173B2B;
+}
+
+.tableControls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.paginationBadge {
+  background: #EDF2F7;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #4A5568;
+  font-weight: 500;
+}
+
+.btnNew {
+  background: #173B2B;
+  color: white;
+  padding: 8px 18px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #E2E5DF;
+  font-size: 14px;
+}
+
+.itemName {
+  font-weight: 600;
+  color: #1A202C;
+}
+
+.itemCategory {
+  font-size: 12px;
+  color: #718096;
+}
+
+.itemPrice {
+  font-weight: 600;
+  color: #2D3748;
+}
+
+.badgeAvailable {
+  background: #DEF7EC;
+  color: #03543F;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badgeUnavailable {
+  background: #FDE8E8;
+  color: #9B1C1C;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.itemActions {
+  display: flex;
+  gap: 8px;
+  color: #718096;
+  font-size: 13px;
+}
+
+.actionLink {
+  color: #2B6CB0;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.actionLink:hover {
+  text-decoration: underline;
+}
+
+.footerPagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #E2E5DF;
+}
+
+.btnPagination {
+  background: #fff;
+  border: 1px solid #CBD5E0;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #4A5568;
+}
+
+.pageInfo {
+  font-size: 13px;
+  color: #718096;
+}
+
+/* Form Styles */
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputFieldFull, .textareaField {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #CBD5E0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.inputFieldDisabled {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #E2E5DF;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #F7FAFC;
+  color: #718096;
+}
+
+.formRowDouble {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.btnCancel {
+  background: #fff;
+  border: 1px solid #CBD5E0;
+  color: #4A5568;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.btnSubmit {
+  background: #173B2B;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.formFooterNote {
+  font-size: 11px;
+  color: #718096;
+  margin-top: 8px;
+}
+
+.availabilityBox {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.availabilityRowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.availabilityDetail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #4B5563;
+  margin-bottom: 8px;
+}
+
+.boldText {
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.infoBanner {
+  background: #F3F4F6;
+  border-left: 4px solid #173B2B;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: #4B5563;
+  margin-top: 24px;
+  border-radius: 0 6px 6px 0;
+}

@@ -1,10 +1,10 @@
 .container {
-  padding: 40px;
+  padding: 30px 40px;
   font-family: system-ui, -apple-system, sans-serif;
   background-color: #F7F8F5;
   min-height: 100vh;
   color: #1c1c1c;
-  max-width: 1100px;
+  max-width: 100%; 
   margin: 0 auto;
 }
 
@@ -32,11 +32,12 @@
   color: #66706B;
 }
 
-.filterGrid {
+.filterGridPC {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: 20px;
+  margin-bottom: 20px;
+  align-items: flex-end;
 }
 
 .filterGroup {
@@ -58,10 +59,7 @@
   font-size: 14px;
   outline: none;
   background: #fff;
-}
-
-.searchWrapper {
-  margin-bottom: 20px;
+  width: 100%;
 }
 
 .tabsRow {
@@ -75,7 +73,7 @@
 .tabBtn {
   background: #EDF2F7;
   border: none;
-  padding: 8px 16px;
+  padding: 8px 18px;
   border-radius: 20px;
   font-size: 13px;
   font-weight: 500;
@@ -91,17 +89,17 @@
 .cardList {
   background: white;
   border-radius: 12px;
-  padding: 24px;
+  padding: 30px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   border: 1px solid #E2E5DF;
-  margin-bottom: 80px;
+  margin-bottom: 90px;
 }
 
 .dishRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 0;
+  padding: 16px 0;
   border-bottom: 1px solid #E2E5DF;
 }
 
@@ -112,8 +110,8 @@
 }
 
 .dishThumb {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   background: #E5E7EB;
   border-radius: 50%;
   display: flex;
@@ -123,8 +121,8 @@
 }
 
 .dishThumbInner {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   background: #9CA3AF;
   border-radius: 50%;
 }
@@ -143,22 +141,22 @@
 .dishRight {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 32px;
 }
 
 .dishPrice {
   font-weight: 600;
   color: #2D3748;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .btnAdd {
   background: #173B2B;
   color: white;
   border: none;
-  padding: 6px 14px;
+  padding: 8px 18px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -171,41 +169,41 @@
   background: #E5E7EB;
   color: #9CA3AF;
   border: none;
-  padding: 6px 14px;
+  padding: 8px 18px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: not-allowed;
 }
 
 .badgeUnavailable {
   color: #9B1C1C;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  margin-right: 8px;
+  margin-right: 10px;
 }
 
 .listFooter {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 20px;
-  padding-top: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
   font-size: 13px;
   color: #718096;
+  border-top: 1px solid #E2E5DF;
 }
 
 .btnReviews {
   background: #fff;
   border: 1px solid #CBD5E0;
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 6px;
   font-size: 13px;
   color: #4A5568;
   cursor: pointer;
 }
 
-/* Barra de Carrito Fija abajo */
 .cartBar {
   position: fixed;
   bottom: 0;
@@ -213,7 +211,7 @@
   right: 0;
   background: #1C1C1C;
   color: white;
-  padding: 16px 32px;
+  padding: 18px 50px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -230,7 +228,7 @@
   background: #173B2B;
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 10px 24px;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
