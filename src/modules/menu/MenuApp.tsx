@@ -5,7 +5,8 @@ import { validateMenuForm } from './validation';
 import { orderHandoff } from './handoff';
 import './menu.css';
 import { OrderForm } from '../orders/OrderForm';
-import { BillPayment, ReceiptDetail, ReceiptList, TableBilling, TakeawayBilling } from '../billing/BillingApp';
+import { ReceiptDetail, ReceiptList, TableBilling, TakeawayBilling, WaiterBilling, WaiterBillDetail } from '../billing/BillingApp';
+import { CheckoutPago } from '../billing/CheckoutPago';
 import { NotificationsInbox } from '../notifications/NotificationsInbox';
 import { CustomerJourney } from '../orders/CustomerJourney';
 import { OrdersBoard } from '../orders/OrdersBoard';
@@ -203,14 +204,27 @@ function AppRoutes({ session, selectedBranchId, onAddDish }: MenuAppProps) {
     <Route path="/management/menu/:menuItemId/edit" element={canManage ? <EditRoute branchId={adminBranch!} /> : <p>No tiene permiso para administrar este menú</p>} />
     <Route path="/branches/:branchId/menu" element={session && ['CUSTOMER', 'WAITER', 'MANAGER', 'GENERAL_MANAGER'].includes(session.role) ? <PublicRoute session={session} onAddDish={onAddDish} /> : <p>No tiene acceso a esta sucursal</p>} />
     <Route path="/orders/new" element={session && orderBranch && ['CUSTOMER', 'WAITER'].includes(session.role) && (session.role === 'CUSTOMER' ? Boolean(searchParams.get('tableId')) : session.branchId === orderBranch) ? <OrderForm session={session} branchId={orderBranch} /> : <Navigate to="/" replace />} />
+    <Route path="/waiter/billing" element={session ? <WaiterBilling session={session} /> : <p>Inicie sesión</p>} />
+    <Route path="/waiter/billing/:billId" element={session ? <WaiterBillDetail session={session} /> : <p>Inicie sesión</p>} />
     <Route path="/branches/:branchId/tables/:tableId/billing" element={session ? <TableBilling session={session} /> : <p>Inicie sesión</p>} />
     <Route path="/branches/:branchId/orders/:orderId/billing" element={session ? <TakeawayBilling session={session} /> : <p>Inicie sesión</p>} />
-    <Route path="/bills/:billId" element={session ? <BillPayment session={session} /> : <p>Inicie sesión</p>} />
-    <Route path="/me/receipts" element={session?.role === 'CUSTOMER' ? <ReceiptList /> : <p>Sin permiso</p>} />
-    <Route path="/me/receipts/:receiptId" element={session?.role === 'CUSTOMER' ? <ReceiptDetail mine /> : <p>Sin permiso</p>} />
+    <Route path="/checkout" element={session ? <CheckoutPago session={session} /> : <p>Inicie sesión</p>} />
+    <Route path="/bills/:billId" element={<LegacyCheckoutRedirect />} />
+    <Route path="/my-receipts" element={session?.role === 'CUSTOMER' ? <ReceiptList /> : <p>Sin permiso</p>} />
+    <Route path="/my-receipts/:receiptId" element={session?.role === 'CUSTOMER' ? <ReceiptDetail mine /> : <p>Sin permiso</p>} />
+    <Route path="/me/receipts" element={<Navigate to="/my-receipts" replace />} />
+    <Route path="/me/receipts/:receiptId" element={<LegacyReceiptRedirect />} />
     <Route path="/branches/:branchId/receipts/:receiptId" element={session && session.role !== 'CUSTOMER' ? <ReceiptDetail mine={false} /> : <p>Sin permiso</p>} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>;
+}
+function LegacyCheckoutRedirect() {
+  const { billId = '' } = useParams();
+  return <Navigate to={`/checkout?billId=${encodeURIComponent(billId)}`} replace />;
+}
+function LegacyReceiptRedirect() {
+  const { receiptId = '' } = useParams();
+  return <Navigate to={`/my-receipts/${encodeURIComponent(receiptId)}`} replace />;
 }
 function Navigation({ session, selectedBranchId, onSelectBranch, onLogout }: MenuAppProps) {
   const navigate = useNavigate();
@@ -223,8 +237,9 @@ function Navigation({ session, selectedBranchId, onSelectBranch, onLogout }: Men
     <Link className="brand" to="/">Bistro<span>✦</span></Link><div className="navLinks"><Link to="/">Inicio</Link>
     {activeBranch && session.role !== 'KITCHEN' && <Link to={`/branches/${activeBranch}/menu`}>Menú</Link>}
     {['WAITER', 'KITCHEN', 'MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/orders">Pedidos</Link>}
+    {session.role === 'WAITER' && <Link to="/waiter/billing">Cerrar cuentas</Link>}
     {['MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/management/menu">Administrar menú</Link>}
-    {session.role === 'CUSTOMER' && <Link to="/me/receipts">Mis recibos</Link>}
+    {session.role === 'CUSTOMER' && <Link to="/my-receipts">Mis comprobantes</Link>}
     <Link to="/notifications">Notificaciones</Link>
     {canSelect && <form onSubmit={event => { event.preventDefault(); if (/^[0-9a-f-]{36}$/i.test(branch)) { onSelectBranch?.(branch); navigate(`/branches/${branch}/menu`); } }}>
       <label>Sucursal (ID) <input aria-label="ID de sucursal" value={branch} onChange={event => setBranch(event.target.value)} placeholder="UUID de sucursal" required /></label>
