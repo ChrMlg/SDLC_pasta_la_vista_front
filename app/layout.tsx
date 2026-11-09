@@ -13,17 +13,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SI Boilerplate",
-  description: "Boilerplate con login básico",
+  title: "Plataforma Restaurante - Frontend",
+  description: "Desarrollo del Módulo 1",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#F7F8F5] text-[#1C1C1C]">
+        {children}
+      </body>
     </html>
   );
 }

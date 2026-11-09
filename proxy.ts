@@ -4,8 +4,9 @@ import { SESSION_COOKIE } from "@/lib/session";
 const publicRoutes = ["/login"];
 
 // Chequeo optimista: solo verifica que exista la cookie de sesión.
-// Si el backend expone un token verificable (p. ej. JWT), validarlo aquí.
 export function proxy(request: NextRequest) {
+  // Desactivado temporalmente para desarrollo de frontend por roles (/gerente, /cliente, etc.)
+  /*
   const { pathname } = request.nextUrl;
   const isPublicRoute = publicRoutes.includes(pathname);
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
@@ -17,6 +18,7 @@ export function proxy(request: NextRequest) {
   if (isPublicRoute && hasSession) {
     return NextResponse.redirect(new URL("/", request.nextUrl));
   }
+  */
 
   return NextResponse.next();
 }
