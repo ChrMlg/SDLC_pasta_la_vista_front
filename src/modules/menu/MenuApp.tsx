@@ -198,7 +198,7 @@ function AppRoutes({ session, selectedBranchId, onAddDish }: MenuAppProps) {
   return <Routes>
     <Route path="/" element={session?.role === 'CUSTOMER' ? <CustomerJourney /> : session?.role === 'MANAGER' || session?.role === 'GENERAL_MANAGER' ? <Navigate to="/management/menu" replace /> : session?.role === 'WAITER' || session?.role === 'KITCHEN' ? <Navigate to="/orders" replace /> : <main className="shell"><h1>Bienvenido a Bistro</h1><p>Seleccione una opción de navegación.</p></main>} />
     <Route path="/orders" element={session && ['WAITER', 'KITCHEN', 'MANAGER', 'GENERAL_MANAGER'].includes(session.role) ? <OrdersBoard session={session} /> : <p>Sin permiso</p>} />
-    <Route path="/notifications" element={session ? <NotificationsInbox /> : <p>Inicie sesión</p>} />
+    <Route path="/notifications" element={session && ['CUSTOMER', 'WAITER'].includes(session.role) ? <NotificationsInbox /> : <main className="shell"><p role="alert">No tiene permiso para ver las notificaciones.</p></main>} />
     <Route path="/management/menu" element={canManage ? <MenuList key={adminBranch!} branchId={adminBranch!} admin /> : <p>No tiene permiso para administrar este menú</p>} />
     <Route path="/management/menu/new" element={canManage ? <MenuForm branchId={adminBranch!} /> : <p>No tiene permiso para administrar este menú</p>} />
     <Route path="/management/menu/:menuItemId/edit" element={canManage ? <EditRoute branchId={adminBranch!} /> : <p>No tiene permiso para administrar este menú</p>} />
@@ -240,7 +240,7 @@ function Navigation({ session, selectedBranchId, onSelectBranch, onLogout }: Men
     {session.role === 'WAITER' && <Link to="/waiter/billing">Cerrar cuentas</Link>}
     {['MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/management/menu">Administrar menú</Link>}
     {session.role === 'CUSTOMER' && <Link to="/my-receipts">Mis comprobantes</Link>}
-    <Link to="/notifications">Notificaciones</Link>
+    {['CUSTOMER', 'WAITER'].includes(session.role) && <Link to="/notifications">Notificaciones</Link>}
     {canSelect && <form onSubmit={event => { event.preventDefault(); if (/^[0-9a-f-]{36}$/i.test(branch)) { onSelectBranch?.(branch); navigate(`/branches/${branch}/menu`); } }}>
       <label>Sucursal (ID) <input aria-label="ID de sucursal" value={branch} onChange={event => setBranch(event.target.value)} placeholder="UUID de sucursal" required /></label>
       <button type="submit">Abrir</button>
