@@ -1,4 +1,24 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { AuthApp } from './modules/auth/AuthApp';
-createRoot(document.getElementById('root')!).render(<React.StrictMode><AuthApp /></React.StrictMode>);
+import React, { useState } from 'react';
+import ReactDOM from 'react-dom/client';
+import { GerenteMenuApp } from './modules/gerente/menu/GerenteMenuApp';
+import { NuevoPlatilloForm } from './modules/gerente/menu/NuevoPlatilloForm';
+
+function MainTest() {
+  const [currentPath, setCurrentPath] = useState('/management/menu');
+
+  return (
+    <div>
+      {currentPath === '/management/menu/new' ? (
+        <NuevoPlatilloForm onNavigate={setCurrentPath} />
+      ) : (
+        <GerenteMenuApp onNavigate={setCurrentPath} />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <MainTest />
+  </React.StrictMode>
+);
