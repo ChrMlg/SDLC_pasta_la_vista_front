@@ -284,3 +284,79 @@
   font-size: 0.85rem;
   margin-bottom: 1rem;
 }
+
+.availability-card-wrapper {
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+.availability-box {
+  background: #fafaf9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+.availability-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.dish-title-bold {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.availability-row-detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #475569;
+  padding: 0.35rem 0;
+}
+
+.availability-notice {
+  background: #f8fafc;
+  border-left: 3px solid #cbd5e1;
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+  color: #64748b;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.prototype-connections-bar {
+  margin-top: 2rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.conn-label {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.btn-pill-sub {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.8rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  color: #334155;
+  cursor: pointer;
+}
+
+.btn-pill-sub:hover {
+  background: #e2e8f0;
+}
