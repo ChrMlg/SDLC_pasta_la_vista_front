@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { GerenteMenuApp } from './modules/gerente/menu/GerenteMenuApp';
 import { NuevoPlatilloForm } from './modules/gerente/menu/NuevoPlatilloForm';
 
+
 function MainTest() {
   const [currentPath, setCurrentPath] = useState('/management/menu');
 
