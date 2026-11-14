@@ -1,0 +1,282 @@
+.mesero-container {
+  font-family: inherit;
+  color: #1a2e22;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 4rem;
+}
+
+.mesero-header-bar {
+  background: #ffffff;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.branch-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #047857;
+  background: #ecfdf5;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #a7f3d0;
+}
+
+.mesero-content {
+  padding: 2rem;
+  max-width: 850px;
+  margin: 0 auto;
+}
+
+.card-order-catalog {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.order-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.order-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.order-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafaf9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+}
+
+.dish-info-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #cbd5e1;
+  border-radius: 50%;
+}
+
+.status-dot.available {
+  background-color: #10b981;
+}
+
+.item-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.item-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.stepper-control {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.stepper-control button {
+  background: #f8fafc;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: #334155;
+}
+
+.stepper-control button:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.stepper-control button:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.stepper-control span {
+  padding: 0 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.notes-group {
+  margin-bottom: 1.5rem;
+}
+
+.notes-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+  background: #fff;
+  resize: vertical;
+}
+
+.order-totals-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1.25rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.total-amount {
+  font-size: 1.25rem;
+  color: #064e3b;
+}
+
+.btn-full {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+}
+
+/* Buscador y pestañas estilo H3 adaptadas al mesero */
+.menu-filter-section {
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.search-bar-mesero {
+  margin-bottom: 0.85rem;
+}
+
+.search-bar-mesero label,
+.order-options-grid label,
+.notes-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.35rem;
+}
+
+.search-bar-mesero input,
+.order-options-grid select {
+  width: 100%;
+  padding: 0.65rem 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #ffffff;
+  outline: none;
+}
+
+.category-tabs-mesero {
+  display: flex;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 8px;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn-mesero {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn-mesero.active {
+  background: #ffffff;
+  color: #064e3b;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Estados visuales de filas y precios */
+.order-item-row.item-selected {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.order-item-row.item-unavailable {
+  opacity: 0.6;
+  background: #f8fafc;
+}
+
+.status-dot.unavailable {
+  background-color: #ef4444;
+}
+
+.text-avail {
+  color: #047857;
+}
+
+.text-unavail {
+  color: #dc2626;
+}
+
+.dish-action-right {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.item-unit-price {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.items-selected-pill {
+  margin-left: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: #ecfdf5;
+  color: #047857;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #a7f3d0;
+}
+
+.empty-menu-state {
+  text-align: center;
+  padding: 1.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  background: #fafaf9;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+}
