@@ -3,6 +3,7 @@ import './inventory.css';
 import { getBranches, getInventory, type ApiError, type Branch, type InventoryItem } from './inventory-api';
 import { InventoryTable } from './InventoryTable';
 import { MovementForm } from './MovementForm';
+import { AlertsPanel } from './AlertsPanel';
 
 type ManagementRole = 'MANAGER' | 'GENERAL_MANAGER';
 
@@ -135,6 +136,6 @@ export function InventoryPage({ role, branchId: sessionBranchId }: {
     <MovementForm branchId={branchId} items={items} onSaved={reload} />
     {!loading && !error && items.length > 0 && <InventoryTable items={items} />}
 
-    {/* H15: alertas de reabastecimiento (aquí se agrega AlertsPanel) */}
+    <AlertsPanel branchId={branchId} refreshKey={refreshKey} />
   </main>;
 }
