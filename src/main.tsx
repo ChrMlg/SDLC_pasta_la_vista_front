@@ -1,10 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { ComandasCocinaApp } from './modules/cocina/kitchen/ComandasCocinaApp';
+import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp';
 
 function MainTest() {
   return (
-    <ComandasCocinaApp onNavigate={() => {}} />
+    <DetalleComandaApp onNavigate={() => {}} />
   );
 }
 
