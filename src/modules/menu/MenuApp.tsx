@@ -9,6 +9,8 @@ import { ReceiptDetail, ReceiptList, TableBilling, TakeawayBilling, WaiterBillin
 import { CheckoutPago } from '../billing/CheckoutPago';
 import { NotificationsInbox } from '../notifications/NotificationsInbox';
 import { ReservationNew } from '../reservations/ReservationNew';
+import { MyReservations } from '../reservations/MyReservations';
+import { ReservationsManagement } from '../reservations/ReservationsManagement';
 import { CustomerJourney } from '../orders/CustomerJourney';
 import { OrdersBoard } from '../orders/OrdersBoard';
 
@@ -201,6 +203,11 @@ function AppRoutes({ session, selectedBranchId, onAddDish }: MenuAppProps) {
     <Route path="/orders" element={session && ['WAITER', 'KITCHEN', 'MANAGER', 'GENERAL_MANAGER'].includes(session.role) ? <OrdersBoard session={session} /> : <p>Sin permiso</p>} />
     <Route path="/notifications" element={session && ['CUSTOMER', 'WAITER'].includes(session.role) ? <NotificationsInbox /> : <main className="shell"><p role="alert">No tiene permiso para ver las notificaciones.</p></main>} />
     <Route path="/reservations/new" element={session?.role === 'CUSTOMER' ? <ReservationNew /> : <main className="shell"><p role="alert" className="error">No tiene permiso para ver esta pantalla.</p></main>} />
+    <Route path="/my-reservations" element={<MyReservations role={session?.role ?? ''} />} />
+    <Route path="/management/reservations" element={session && ['MANAGER', 'GENERAL_MANAGER'].includes(session.role)
+      ? <ReservationsManagement role={session.role === 'MANAGER' ? 'MANAGER' : 'GENERAL_MANAGER'}
+        branchId={session.role === 'MANAGER' ? session.branchId : null} />
+      : <main className="shell"><p role="alert" className="error">No tiene permiso para ver esta pantalla.</p></main>} />
     <Route path="/management/menu" element={canManage ? <MenuList key={adminBranch!} branchId={adminBranch!} admin /> : <p>No tiene permiso para administrar este menú</p>} />
     <Route path="/management/menu/new" element={canManage ? <MenuForm branchId={adminBranch!} /> : <p>No tiene permiso para administrar este menú</p>} />
     <Route path="/management/menu/:menuItemId/edit" element={canManage ? <EditRoute branchId={adminBranch!} /> : <p>No tiene permiso para administrar este menú</p>} />
@@ -241,7 +248,9 @@ function Navigation({ session, selectedBranchId, onSelectBranch, onLogout }: Men
     {['WAITER', 'KITCHEN', 'MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/orders">Pedidos</Link>}
     {session.role === 'WAITER' && <Link to="/waiter/billing">Cerrar cuentas</Link>}
     {['MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/management/menu">Administrar menú</Link>}
+    {['MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/management/reservations">Reservaciones</Link>}
     {session.role === 'CUSTOMER' && <Link to="/my-receipts">Mis comprobantes</Link>}
+    {session.role === 'CUSTOMER' && <Link to="/my-reservations">Mis reservaciones</Link>}
     {session.role === 'CUSTOMER' && <Link to="/reservations/new">Reservar mesa</Link>}
     {['CUSTOMER', 'WAITER'].includes(session.role) && <Link to="/notifications">Notificaciones</Link>}
     {canSelect && <form onSubmit={event => { event.preventDefault(); if (/^[0-9a-f-]{36}$/i.test(branch)) { onSelectBranch?.(branch); navigate(`/branches/${branch}/menu`); } }}>
