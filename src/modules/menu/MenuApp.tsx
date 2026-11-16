@@ -16,6 +16,7 @@ import { CustomerJourney } from '../orders/CustomerJourney';
 import { OrdersBoard } from '../orders/OrdersBoard';
 import { MyReviews } from '../reviews/MyReviews';
 import { RatingsSummary } from '../reviews/RatingsSummary';
+import { BranchReviews } from '../reviews/BranchReviews';
 
 export type MenuSession = { role: 'CUSTOMER' | 'WAITER' | 'KITCHEN' | 'MANAGER' | 'GENERAL_MANAGER'; branchId: string | null };
 export type MenuAppProps = { session: MenuSession | null; selectedBranchId?: string | null; onSelectBranch?: (branchId: string) => void; onLogout?: () => void; onAddDish?: (dishId: string, page?: number, search?: string, category?: string) => void };
@@ -220,6 +221,9 @@ function AppRoutes({ session, selectedBranchId, onAddDish }: MenuAppProps) {
       ? <RatingsSummary role={session.role === 'MANAGER' ? 'MANAGER' : 'GENERAL_MANAGER'}
         branchId={session.role === 'MANAGER' ? session.branchId : null} />
       : <main className="shell"><p role="alert" className="error">No tiene permiso para ver esta pantalla.</p></main>} />
+    <Route path="/reviews" element={session
+      ? <BranchReviews role={session.role} branchId={session.branchId} />
+      : <main className="shell"><p role="alert" className="error">No tiene permiso para ver esta pantalla.</p></main>} />
     <Route path="/management/menu" element={canManage ? <MenuList key={adminBranch!} branchId={adminBranch!} admin /> : <p>No tiene permiso para administrar este menú</p>} />
     <Route path="/management/menu/new" element={canManage ? <MenuForm branchId={adminBranch!} /> : <p>No tiene permiso para administrar este menú</p>} />
     <Route path="/management/menu/:menuItemId/edit" element={canManage ? <EditRoute branchId={adminBranch!} /> : <p>No tiene permiso para administrar este menú</p>} />
@@ -263,6 +267,7 @@ function Navigation({ session, selectedBranchId, onSelectBranch, onLogout }: Men
     {['MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/management/reservations">Reservaciones</Link>}
     {['MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/management/inventory">Inventario</Link>}
     {['MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/management/ratings">Calificaciones</Link>}
+    {['CUSTOMER', 'WAITER', 'MANAGER', 'GENERAL_MANAGER'].includes(session.role) && <Link to="/reviews">Reseñas</Link>}
     {session.role === 'CUSTOMER' && <Link to="/my-receipts">Mis comprobantes</Link>}
     {session.role === 'CUSTOMER' && <Link to="/my-reviews">Calificar pedidos</Link>}
     {session.role === 'CUSTOMER' && <Link to="/my-reservations">Mis reservaciones</Link>}
