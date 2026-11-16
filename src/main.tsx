@@ -1,10 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp';
+import { PlatillosComandaApp } from './modules/cocina/items/PlatillosComandaApp';
 
 function MainTest() {
   return (
-    <DetalleComandaApp onNavigate={() => {}} />
+    <PlatillosComandaApp onNavigate={() => {}} />
   );
 }
 
