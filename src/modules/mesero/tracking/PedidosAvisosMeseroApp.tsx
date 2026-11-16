@@ -33,7 +33,6 @@ export function PedidosAvisosMeseroApp({
         <div className="breadcrumb">
           Mesero / <strong>Pedidos y avisos del mesero</strong>
         </div>
-        <div className="branch-badge">Centro · Vista de ejemplo</div>
       </header>
 
       <main className="mesero-track-content">
