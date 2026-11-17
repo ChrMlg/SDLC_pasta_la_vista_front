@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import {  } from './modules/cocina/items/PlatillosComandaApp';
-import { RecogidaEntregaApp } from './modules/mesero/tracking/RecogidaEntregaApp';
+import { MeseroNotificacionesApp } from './modules/mesero/notifications/MeseroNotificacionesApp';
 
 function MainTest() {
   return (
-    <RecogidaEntregaApp onNavigate={() => {}} />
+    <MeseroNotificacionesApp onNavigate={() => {}} />
   );
 }
 

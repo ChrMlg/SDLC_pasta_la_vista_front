@@ -19,7 +19,6 @@ export function MeseroNotificacionesApp({ onNavigate }: { onNavigate: (path: str
         <div className="breadcrumb">
           Mesero / <strong>Notificaciones para mesero</strong>
         </div>
-        <div className="branch-badge">Centro · Vista de ejemplo</div>
       </header>
 
       <main className="notif-content">
@@ -28,7 +27,6 @@ export function MeseroNotificacionesApp({ onNavigate }: { onNavigate: (path: str
         </div>
 
         <h1>Notificaciones para mesero</h1>
-        <p className="subtitle-desc">Pantalla individual · Prototipo para diseñar y programar el sitio web</p>
 
         <div className="card-notif-panel">
           <div className="catalog-header-text">
@@ -58,7 +56,7 @@ export function MeseroNotificacionesApp({ onNavigate }: { onNavigate: (path: str
           )}
 
           <div className="readonly-notice">
-            Solo lectura: no permite modificar ni eliminar avisos. Actualización en tiempo real (H29).
+            Solo lectura: no permite modificar ni eliminar avisos. Actualización en tiempo real.
           </div>
 
           {/* Botón que conecta  H9 + H29 de mesero */}
