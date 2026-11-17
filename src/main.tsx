@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ClienteNotificacionesApp } from './modules/cliente/notifications/ClienteNotificacionesApp';
 import { ReporteVentasApp } from './modules/gerente-general/reports/ReporteVentasApp';
+import { ComparativaSucursalesApp } from './modules/gerente-general/reports/ComparativaSucursalesApp';
 
 function MainTest() {
   const [currentPath, setCurrentPath] = useState('/notifications');
@@ -12,7 +13,7 @@ function MainTest() {
 
   return (
     <div>
-          <ReporteVentasApp onNavigate={handleNavigate} />
+          <ComparativaSucursalesApp onNavigate={handleNavigate} />
     </div>
   );
 }
