@@ -8,10 +8,10 @@ interface SalesRow {
 }
 
 export function ReporteVentasApp({ onNavigate }: { onNavigate: (path: string) => void }) {
-  const [startDate, setStartDate] = useState('01/10/2026');
-  const [endDate, setEndDate] = useState('31/10/2026');
+  const today = new Date().toISOString().split('T')[0];
+  const [startDate, setStartDate] = useState('2026-10-01');
+  const [endDate, setEndDate] = useState(today);
 
-  // Estructura fija de las sucursales de la cadena, con métricas en cero hasta recibir la data del backend
   const [salesData] = useState<SalesRow[]>([
     { branch: 'Centro', sales: 0, orders: 0 },
     { branch: 'Bambu', sales: 0, orders: 0 },
@@ -35,7 +35,6 @@ export function ReporteVentasApp({ onNavigate }: { onNavigate: (path: string) =>
 
       <main className="report-content">
         <div className="meta-info">
-          <span className="badge-h">H31 · GENERAL_MANAGER</span>
           <span className="route-tag">/reports/sales</span>
         </div>
 
@@ -48,15 +47,15 @@ export function ReporteVentasApp({ onNavigate }: { onNavigate: (path: string) =>
             <p>Totales aprobados (IVA incluido) y cantidad de pedidos PAID.</p>
           </div>
 
-          {/* Filtros de calendario / rango de fechas */}
+          {/* Filtros de calendario con restricción max={today} para evitar fechas futuras */}
           <div className="date-filters-grid">
             <div className="form-group-report">
               <label>Fecha inicial</label>
-              <input type="text" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <input type="date" max={today} value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div className="form-group-report">
               <label>Fecha final</label>
-              <input type="text" value={endDate} onChange={e => setEndDate(e.target.value)} />
+              <input type="date" max={today} value={endDate} onChange={e => setEndDate(e.target.value)} />
             </div>
           </div>
 
@@ -72,7 +71,7 @@ export function ReporteVentasApp({ onNavigate }: { onNavigate: (path: string) =>
             </div>
           </div>
 
-          {/* Tabla con las sucursales listas y valores en cero */}
+          {/* Tabla con las sucursales listas */}
           <table className="report-table">
             <thead>
               <tr>
