@@ -1,33 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './mesero-order.css';
 
 interface OrderItem {
   id: string;
   name: string;
-  category: 'Entrada' | 'Plato fuerte' | 'Bebida' | 'Postre';
+  category: string;
   price: number;
   isAvailable: boolean;
   quantity: number;
 }
 
+const BRANCH_MAP: Record<string, string> = {
+  Centro: 'a1111111-1111-4111-8111-111111111111',
+  Bambu: 'a2222222-2222-4222-8222-222222222222',
+  Ramblas: 'a3333333-3333-4333-8333-333333333333',
+};
+
 export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const [selectedBranch, setSelectedBranch] = useState('Centro');
   const [serviceType, setServiceType] = useState<'DINE_IN' | 'TAKEAWAY'>('DINE_IN');
   const [tableNumber, setTableNumber] = useState('Mesa 01');
   const [activeTab, setActiveTab] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [specialNotes, setSpecialNotes] = useState('');
 
-  //menu
-  const [items, setItems] = useState<OrderItem[]>([
-    { id: '1', name: 'Pasta al pesto', category: 'Plato fuerte', price: 12.50, isAvailable: true, quantity: 2 },
-    { id: '2', name: 'Bruschettas', category: 'Entrada', price: 6.50, isAvailable: true, quantity: 1 },
-    { id: '3', name: 'Tarta de limón', category: 'Postre', price: 6.00, isAvailable: true, quantity: 0 },
-    { id: '4', name: 'Limonada natural', category: 'Bebida', price: 5.00, isAvailable: true, quantity: 0 },
-    { id: '5', name: 'Pollo al horno', category: 'Plato fuerte', price: 13.25, isAvailable: true, quantity: 0 },
-    { id: '6', name: 'Ensalada fresca', category: 'Entrada', price: 7.25, isAvailable: false, quantity: 0 },
-    { id: '7', name: 'Flan casero', category: 'Postre', price: 4.50, isAvailable: true, quantity: 0 },
-    { id: '8', name: 'Café de la casa', category: 'Bebida', price: 2.75, isAvailable: true, quantity: 0 },
-  ]);
+  const [items, setItems] = useState<OrderItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    loadWaiterMenu();
+  }, [selectedBranch]);
+
+  const loadWaiterMenu = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
+      
+      const response = await fetch(`/api/branches/${branchId}/menu`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Error al obtener el menú para el mesero');
+      const data = await response.json();
+      const list = Array.isArray(data) ? data : (data.data || []);
+      
+      setItems(list.map((item: any) => ({ ...item, quantity: 0 })));
+    } catch (err) {
+      setError('No se pudo conectar con el servidor para cargar el menú.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategoryLabel = (cat: string) => {
+    const map: Record<string, string> = {
+      STARTER: 'Entrada',
+      MAIN_COURSE: 'Plato fuerte',
+      DRINK: 'Bebida',
+      DESSERT: 'Postre',
+    };
+    return map[cat] || cat;
+  };
 
   const handleQuantityChange = (id: string, delta: number) => {
     setItems(prev =>
@@ -41,28 +76,68 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
     );
   };
 
-  // Filtrado por nombre y pestaña de categoría 
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const categoryLabel = getCategoryLabel(item.category);
     const matchesTab =
       activeTab === 'Todos' ||
-      (activeTab === 'Entradas' && item.category === 'Entrada') ||
-      (activeTab === 'Platos fuertes' && item.category === 'Plato fuerte') ||
-      (activeTab === 'Bebidas' && item.category === 'Bebida') ||
-      (activeTab === 'Postres' && item.category === 'Postre');
+      (activeTab === 'Entradas' && categoryLabel === 'Entrada') ||
+      (activeTab === 'Platos fuertes' && categoryLabel === 'Plato fuerte') ||
+      (activeTab === 'Bebidas' && categoryLabel === 'Bebida') ||
+      (activeTab === 'Postres' && categoryLabel === 'Postre');
     return matchesSearch && matchesTab;
   });
 
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = items.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0);
   const selectedCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
     if (subtotal === 0) {
       alert('Debes seleccionar al menos un platillo disponible para el pedido.');
       return;
     }
 
-    onNavigate('/waiter/orders/confirm');
+    try {
+      setSubmitting(true);
+      setError('');
+      const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
+
+      // items seleccionados para el payload del backend
+      const orderItems = items
+        .filter(item => item.quantity > 0)
+        .map(item => ({
+          menuItemId: item.id,
+          quantity: item.quantity,
+          notes: specialNotes || undefined,
+        }));
+
+      const payload = {
+        branchId,
+        serviceType,
+        tableNumber: serviceType === 'DINE_IN' ? tableNumber : null,
+        items: orderItems,
+      };
+
+      // Petición POST al backend para registrar la orden (H4)
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Error al registrar el pedido en el servidor');
+      }
+
+      alert('¡Pedido registrado y enviado a cocina con éxito!');
+      onNavigate('/waiter/orders/confirm');
+    } catch (err: any) {
+      setError(err.message || 'No se pudo enviar el pedido.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -71,27 +146,37 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
         <div className="breadcrumb">
           Mesero / <strong>Registro de pedido por mesero</strong>
         </div>
-        <div className="branch-badge">Centro · Vista de ejemplo</div>
       </header>
 
       <main className="mesero-content">
         <div className="meta-info">
-          <span className="badge-h">H4 · WAITER</span>
           <span className="route-tag">/waiter/orders/new</span>
         </div>
 
         <h1>Registro de pedido por mesero</h1>
-        <p className="subtitle-desc">Pantalla individual · Prototipo para diseñar y programar el sitio web</p>
 
         <div className="card-order-catalog">
           <div className="catalog-header-text">
-            <span className="catalog-tag">SUCURSAL CENTRO</span>
+            <span className="catalog-tag">GESTIÓN DE PEDIDOS</span>
             <h2>Tomar nuevo pedido</h2>
-            <p>Puedes registrar varios pedidos para la misma mesa.</p>
+            <p>Registra el pedido para enviar directamente a cocina respetando la disponibilidad.</p>
           </div>
 
-          {/* Selectores de Servicio y Mesa */}
+          {error && <div className="alert-error" style={{ background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem' }}>{error}</div>}
+
           <div className="order-options-grid">
+            <div className="form-group">
+              <label>Sucursal</label>
+              <select
+                value={selectedBranch}
+                onChange={e => setSelectedBranch(e.target.value)}
+              >
+                <option value="Centro">Centro</option>
+                <option value="Bambu">Bambu</option>
+                <option value="Ramblas">Ramblas</option>
+              </select>
+            </div>
+
             <div className="form-group">
               <label>Servicio</label>
               <select
@@ -122,13 +207,12 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
             </div>
           </div>
 
-          {/* Buscador y pestañas de categorías ordenadas como en H3 */}
           <div className="menu-filter-section">
             <div className="form-group search-bar-mesero">
               <label>Buscar platillo en el menú</label>
               <input
                 type="text"
-                placeholder="Buscar por nombre (ej. Pasta, Limonada)..."
+                placeholder="Buscar por nombre..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -148,9 +232,10 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
             </div>
           </div>
 
-          {/* Listado ordenado de platillos con control - y + */}
           <div className="order-items-list">
-            {filteredItems.length === 0 ? (
+            {loading ? (
+              <div className="empty-menu-state">Cargando menú del servidor...</div>
+            ) : filteredItems.length === 0 ? (
               <div className="empty-menu-state">No se encontraron platillos con ese filtro.</div>
             ) : (
               filteredItems.map(item => (
@@ -161,12 +246,12 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
                   }`}
                 >
                   <div className="dish-info-left">
-                    <div className={`status-dot ${item.isAvailable ? 'available' : 'unavailable'}`}></div>
+                    <div className={`status-dot ${item.isAvailable ? 'available' : 'unavailable'}`} style={{ background: item.isAvailable ? '#059669' : '#ef4444' }}></div>
                     <div>
                       <h4 className="item-title">{item.name}</h4>
                       <span className="item-sub">
-                        {item.category} ·{' '}
-                        <strong className={item.isAvailable ? 'text-avail' : 'text-unavail'}>
+                        {getCategoryLabel(item.category)} ·{' '}
+                        <strong className={item.isAvailable ? 'text-avail' : 'text-unavail'} style={{ color: item.isAvailable ? '#059669' : '#ef4444' }}>
                           {item.isAvailable ? 'Disponible' : 'No disponible'}
                         </strong>
                       </span>
@@ -174,7 +259,7 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
                   </div>
 
                   <div className="dish-action-right">
-                    <span className="item-unit-price">${item.price.toFixed(2)}</span>
+                    <span className="item-unit-price">${Number(item.price).toFixed(2)}</span>
                     <div className="stepper-control">
                       <button
                         type="button"
@@ -198,9 +283,8 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
             )}
           </div>
 
-          {/* Notas especiales por platillo */}
           <div className="form-group notes-group">
-            <label>Notas especiales por platillo</label>
+            <label>Notas especiales por pedido</label>
             <textarea
               rows={3}
               value={specialNotes}
@@ -209,7 +293,6 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
             />
           </div>
 
-          {/* Subtotal e IVA */}
           <div className="order-totals-row">
             <div>
               <span>Total antes de IVA</span>
@@ -218,10 +301,15 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
             <span className="total-amount">${subtotal.toFixed(2)}</span>
           </div>
 
-          {/* Botón de Confirmar pedido */}
           <div className="form-actions">
-            <button type="button" className="btn-primary-green btn-full" onClick={handleConfirmOrder}>
-              Confirmar pedido
+            <button 
+              type="button" 
+              className="btn-primary-green btn-full" 
+              onClick={handleConfirmOrder} 
+              disabled={submitting}
+              style={{ background: '#059669', color: '#fff', padding: '0.75rem', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}
+            >
+              {submitting ? 'Enviando a cocina...' : 'Confirmar y enviar a cocina'}
             </button>
           </div>
         </div>

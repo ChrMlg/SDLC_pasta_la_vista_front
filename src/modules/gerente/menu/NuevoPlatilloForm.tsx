@@ -1,37 +1,57 @@
 import React, { useState } from 'react';
 import { createMenuItem } from './gerente-menu-api';
-import './gerente-menu.css';
+import './gerente-menu.css'; 
 
-const CENTRO_BRANCH_ID = 'uuid-sucursal-centro-aqui';
+interface NuevoPlatilloFormProps {
+  onNavigate: (path: string) => void;
+}
 
-export function NuevoPlatilloForm({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function NuevoPlatilloForm({ onNavigate }: NuevoPlatilloFormProps) {
+  // UUID fijo de la sucursal Centro
+  const branchId = 'a1111111-1111-4111-8111-111111111111';
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('MAIN_COURSE');
+  const [category, setCategory] = useState('MAIN_COURSE'); 
   const [price, setPrice] = useState('');
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSubmitting(true);
+    setSuccess('');
+
+    const numericPrice = parseFloat(String(price).replace(',', '.'));
+    if (isNaN(numericPrice) || numericPrice <= 0) {
+      setError('Por favor, ingresa un precio válido mayor a 0');
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      await createMenuItem(CENTRO_BRANCH_ID, {
+      await createMenuItem(branchId, {
         name,
         description: description.trim() || undefined,
         category,
-        price,
+        price: numericPrice,
       });
 
-      alert('Platillo registrado con éxito');
-      onNavigate('/management/menu');
+      setSuccess('¡Platillo registrado con éxito!');
+      setName('');
+      setDescription('');
+      setPrice('');
+      
+      setTimeout(() => {
+        onNavigate('/management/menu');
+      }, 1500);
+
     } catch (err: any) {
-      // Manejo de errores devueltos por el backend (ej. 409 duplicado, 400 validación)
-      setError(err.message || 'No se pudo guardar el platillo en el servidor.');
+      setError(err.message || 'Error al registrar el platillo');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -39,17 +59,14 @@ export function NuevoPlatilloForm({ onNavigate }: { onNavigate: (path: string) =
     <div className="gerente-container">
       <header className="gerente-header">
         <div className="gerente-breadcrumb">Gerente de sucursal / <strong>Registrar platillo</strong></div>
-        <div className="gerente-branch-badge">Centro - Conectado al Back</div>
       </header>
 
       <main className="gerente-content">
         <div className="meta-info">
-          <span className="badge-h">H1 · MANAGER</span>
           <span className="route-tag">/management/menu/new</span>
         </div>
         
         <h1>Registrar platillo</h1>
-        <p className="subtitle-desc">El servidor validará las restricciones de nombre único y formato.</p>
 
         <div className="card-catalog">
           <div className="catalog-header-text">
@@ -57,67 +74,72 @@ export function NuevoPlatilloForm({ onNavigate }: { onNavigate: (path: string) =
             <h2>Nuevo platillo</h2>
           </div>
 
-          {error && <div className="alert-error">{error}</div>}
+          {error && <div className="alert-error" style={{ background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.85rem' }}>{error}</div>}
+          {success && <div className="alert-success" style={{ background: '#059669', color: '#fff', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.85rem' }}>{success}</div>}
 
           <form onSubmit={handleSubmit} className="dish-form">
             <div className="form-group">
               <label>Nombre · 2–80 caracteres</label>
               <input 
                 type="text" 
-                placeholder="Ej. Pollo al horno" 
                 value={name} 
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)} 
                 maxLength={80}
-                required
+                required 
               />
             </div>
 
             <div className="form-group">
               <label>Descripción · máx. 300</label>
               <textarea 
-                placeholder="Descripción opcional" 
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)} 
                 maxLength={300}
                 rows={3}
               />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
+            <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
+              <div className="form-group" style={{ flex: 1 }}>
                 <label>Categoría</label>
-                <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                  <option value="STARTER">Entrada</option>
+                <select 
+                  value={category} 
+                  onChange={(e) => setCategory(e.target.value)}
+                >
                   <option value="MAIN_COURSE">Plato fuerte</option>
+                  <option value="STARTER">Entrada</option>
                   <option value="DRINK">Bebida</option>
                   <option value="DESSERT">Postre</option>
                 </select>
               </div>
 
-              <div className="form-group">
+              <div className="form-group" style={{ flex: 1 }}>
                 <label>Precio USD · 0.01–99,999.99</label>
                 <input 
                   type="number" 
                   step="0.01" 
-                  placeholder="12.50" 
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
+                  value={price} 
+                  onChange={(e) => setPrice(e.target.value)} 
+                  required 
+                  placeholder="85.00"
                 />
               </div>
             </div>
 
-            <div className="form-actions">
+            <div className="form-actions" style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
               <button 
                 type="button" 
                 className="btn-secondary"
                 onClick={() => onNavigate('/management/menu')}
-                disabled={submitting}
               >
                 Cancelar
               </button>
-              <button type="submit" className="btn-primary-green" disabled={submitting}>
-                {submitting ? 'Guardando...' : 'Guardar platillo'}
+              <button 
+                type="submit" 
+                className="btn-primary-green"
+                disabled={loading}
+              >
+                {loading ? 'Guardando...' : 'Guardar platillo'}
               </button>
             </div>
           </form>

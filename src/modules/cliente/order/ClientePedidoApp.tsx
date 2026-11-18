@@ -1,31 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './cliente-order.css';
 
 interface DishItem {
   id: string;
   name: string;
-  category: 'Entrada' | 'Plato fuerte' | 'Bebida' | 'Postre';
+  category: string;
   price: number;
   isAvailable: boolean;
   quantity: number;
 }
 
+const BRANCH_MAP: Record<string, string> = {
+  Centro: 'a1111111-1111-4111-8111-111111111111',
+  Bambú: 'a2222222-2222-4222-8222-222222222222',
+  Ramblas: 'a3333333-3333-4333-8333-333333333333',
+};
+
 export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, orderData?: any) => void }) {
   const [selectedBranch, setSelectedBranch] = useState('Centro');
   const [serviceType, setServiceType] = useState<'DINE_IN' | 'TAKEAWAY'>('DINE_IN');
-  const [tableNumber, setTableNumber] = useState('');
+  const [tableNumber, setTableNumber] = useState('Mesa 01');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('Todos');
 
-  // Platillos del menú con cantidad inicial en 0 (nada seleccionado por defecto)
-  const [items, setItems] = useState<DishItem[]>([
-    { id: '1', name: 'Pasta al pesto', category: 'Plato fuerte', price: 12.50, isAvailable: true, quantity: 0 },
-    { id: '2', name: 'Bruschettas', category: 'Entrada', price: 6.50, isAvailable: true, quantity: 0 },
-    { id: '3', name: 'Tarta de limón', category: 'Postre', price: 6.00, isAvailable: true, quantity: 0 },
-    { id: '4', name: 'Limonada natural', category: 'Bebida', price: 5.00, isAvailable: true, quantity: 0 },
-    { id: '5', name: 'Pollo al horno', category: 'Plato fuerte', price: 13.25, isAvailable: true, quantity: 0 },
-    { id: '6', name: 'Ensalada fresca', category: 'Entrada', price: 7.25, isAvailable: false, quantity: 0 },
-  ]);
+  const [items, setItems] = useState<DishItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    loadClientMenu();
+  }, [selectedBranch]);
+
+  const loadClientMenu = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
+      
+      const response = await fetch(`/api/branches/${branchId}/menu`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Error al obtener el menú del servidor');
+      const data = await response.json();
+      const list = Array.isArray(data) ? data : (data.data || []);
+      
+      setItems(list.map((item: any) => ({ ...item, quantity: 0 })));
+    } catch (err) {
+      setError('No se pudo conectar con el servidor para cargar el menú.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategoryLabel = (cat: string) => {
+    const map: Record<string, string> = {
+      STARTER: 'Entrada',
+      MAIN_COURSE: 'Plato fuerte',
+      DRINK: 'Bebida',
+      DESSERT: 'Postre',
+    };
+    return map[cat] || cat;
+  };
 
   const handleQuantityChange = (id: string, delta: number) => {
     setItems(prev =>
@@ -41,16 +76,17 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
 
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const categoryLabel = getCategoryLabel(item.category);
     const matchesTab =
       activeTab === 'Todos' ||
-      (activeTab === 'Entradas' && item.category === 'Entrada') ||
-      (activeTab === 'Platos fuertes' && item.category === 'Plato fuerte') ||
-      (activeTab === 'Bebidas' && item.category === 'Bebida') ||
-      (activeTab === 'Postres' && item.category === 'Postre');
+      (activeTab === 'Entradas' && categoryLabel === 'Entrada') ||
+      (activeTab === 'Platos fuertes' && categoryLabel === 'Plato fuerte') ||
+      (activeTab === 'Bebidas' && categoryLabel === 'Bebida') ||
+      (activeTab === 'Postres' && categoryLabel === 'Postre');
     return matchesSearch && matchesTab;
   });
 
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = items.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0);
   const totalQuantity = items.reduce((acc, item) => acc + item.quantity, 0);
 
   const handleReviewOrder = () => {
@@ -58,14 +94,15 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
       alert('Pedido vacío. Añade artículos desde el menú.');
       return;
     }
-    onNavigate('/orders/review', { selectedBranch, serviceType, tableNumber, items, subtotal });
+    const branchId = BRANCH_MAP[selectedBranch];
+    onNavigate('/orders/review', { branchId, selectedBranch, serviceType, tableNumber, items, subtotal });
   };
 
   return (
     <div className="cliente-container">
       <header className="cliente-header-bar">
         <div className="breadcrumb">Cliente / <strong>Pedido por autoservicio</strong></div>
-        <div className="branch-badge">{selectedBranch} · Vista de ejemplo</div>
+        <div className="branch-badge">{selectedBranch} · Conectado al Back</div>
       </header>
 
       <main className="cliente-content">
@@ -75,16 +112,17 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
         </div>
 
         <h1>Pedido por autoservicio</h1>
-        <p className="subtitle-desc">Pantalla individual · Prototipo para diseñar y programar el sitio web</p>
+        <p className="subtitle-desc">Selecciona tus platillos disponibles en tiempo real.</p>
+
+        {error && <div className="alert-error" style={{ background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem' }}>{error}</div>}
 
         <div className="card-order-catalog">
           <div className="catalog-header-text">
             <span className="catalog-tag">PEDIDO DIGITAL</span>
             <h2>Arma tu pedido</h2>
-            <p>Los platillos deben estar disponibles en la sucursal seleccionada.</p>
+            <p>Los platillos se sincronizan con la disponibilidad del gerente.</p>
           </div>
 
-          {/* Campo selector de Sucursales */}
           <div className="form-group" style={{ marginBottom: '1.25rem' }}>
             <label>Sucursal</label>
             <select
@@ -98,7 +136,6 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
             </select>
           </div>
 
-          {/* Selector de servicio: En mesa / Para llevar */}
           <div className="service-toggle-tabs">
             <button
               type="button"
@@ -116,7 +153,6 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
             </button>
           </div>
 
-          {/* Selector de mesa condicional */}
           {serviceType === 'DINE_IN' ? (
             <div className="form-group" style={{ marginBottom: '1.25rem' }}>
               <label>Seleccionar Mesa</label>
@@ -130,21 +166,19 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
                   return <option key={num} value={`Mesa ${num}`}>Mesa {num}</option>;
                 })}
               </select>
-              <small className="info-small-text">En mesa: asignación válida de la {tableNumber}.</small>
             </div>
           ) : (
-            <div className="info-banner">
+            <div className="info-banner" style={{ marginBottom: '1.25rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '6px', fontSize: '0.85rem', color: '#64748b' }}>
               Para llevar: retiro directo en sucursal ({selectedBranch}), no requiere mesa.
             </div>
           )}
 
-          {/* Buscador y pestañas de categorías del menú */}
           <div className="menu-filter-section">
             <div className="form-group search-bar-mesero">
               <label>Buscar platillo en el menú</label>
               <input
                 type="text"
-                placeholder="Buscar platillo por nombre..."
+                placeholder="Buscar platillo..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -164,10 +198,11 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
             </div>
           </div>
 
-          {/* Listado de platillos con controles - y + */}
           <div className="order-items-list">
-            {filteredItems.length === 0 ? (
-              <div className="empty-menu-state">No se encontraron platillos con ese filtro.</div>
+            {loading ? (
+              <div className="empty-menu-state">Cargando menú del servidor...</div>
+            ) : filteredItems.length === 0 ? (
+              <div className="empty-menu-state">No hay platillos disponibles para esta selección.</div>
             ) : (
               filteredItems.map(item => (
                 <div
@@ -177,19 +212,19 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
                   }`}
                 >
                   <div className="dish-info-left">
-                    <div className={`status-dot ${item.isAvailable ? 'available' : 'unavailable'}`}></div>
+                    <div className={`status-dot ${item.isAvailable ? 'available' : 'unavailable'}`} style={{ background: item.isAvailable ? '#059669' : '#ef4444' }}></div>
                     <div>
                       <h4 className="item-title">{item.name}</h4>
                       <span className="item-sub">
-                        {item.category} · <strong className={item.isAvailable ? 'text-avail' : 'text-unavail'}>
-                          {item.isAvailable ? `$${item.price.toFixed(2)}` : 'No disponible'}
+                        {getCategoryLabel(item.category)} · <strong className={item.isAvailable ? 'text-avail' : 'text-unavail'} style={{ color: item.isAvailable ? '#059669' : '#ef4444' }}>
+                          {item.isAvailable ? `$${Number(item.price).toFixed(2)}` : 'No disponible'}
                         </strong>
                       </span>
                     </div>
                   </div>
 
                   <div className="dish-action-right">
-                    <span className="item-unit-price">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="item-unit-price">${(Number(item.price) * item.quantity).toFixed(2)}</span>
                     <div className="stepper-control">
                       <button
                         type="button"
@@ -213,24 +248,18 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
             )}
           </div>
 
-          {/* Resumen de totales */}
           <div className="order-totals-row">
             <div>
-              <span className="totals-label-sub">Subtotal de ejemplo</span>
+              <span className="totals-label-sub">Subtotal</span>
               <div className="totals-sub-desc">Platillos seleccionados: {totalQuantity}</div>
             </div>
             <span className="total-amount">${subtotal.toFixed(2)}</span>
           </div>
 
-          {/* Botón Revisar pedido */}
           <div className="form-actions">
-            <button type="button" className="btn-primary-green btn-full" onClick={handleReviewOrder}>
+            <button type="button" className="btn-primary-green btn-full" onClick={handleReviewOrder} style={{ background: '#059669', color: '#fff', padding: '0.75rem', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}>
               Revisar pedido →
             </button>
-          </div>
-
-          <div className="footer-notice">
-            Sin elementos o cantidades menores al mínimo: no se permite enviar. Un pedido requiere sucursal y asignación válida.
           </div>
         </div>
       </main>
