@@ -36,15 +36,44 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
       setLoading(true);
       setError('');
       const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
-      
-      const response = await fetch(`/api/branches/${branchId}/menu`, {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Error al obtener el menú del servidor');
-      const data = await response.json();
-      const list = Array.isArray(data) ? data : (data.data || []);
-      
-      setItems(list.map((item: any) => ({ ...item, quantity: 0 })));
+
+      let allDishes: any[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      while (currentPage <= totalPages) {
+        const response = await fetch(`/api/branches/${branchId}/menu?page=${currentPage}`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener el menú del servidor');
+        }
+
+        const data = await response.json();
+        const pageList: any[] = Array.isArray(data) ? data : (data.data || []);
+
+        if (pageList.length === 0) {
+          break;
+        }
+
+        const uniqueNew = pageList.filter(
+          (newDish: any) => !allDishes.some((existing: any) => existing.id === newDish.id)
+        );
+        allDishes = [...allDishes, ...uniqueNew];
+
+        if (!Array.isArray(data) && typeof data.total === 'number' && typeof data.pageSize === 'number' && data.pageSize > 0) {
+          totalPages = Math.ceil(data.total / data.pageSize);
+        } else {
+          break;
+        }
+
+        currentPage++;
+        if (currentPage > 25) break;
+      }
+
+      setItems(allDishes.map((item: any) => ({ ...item, quantity: 0 })));
     } catch (err) {
       setError('No se pudo conectar con el servidor para cargar el menú.');
     } finally {

@@ -14,14 +14,28 @@ export function GerenteMenuApp({ onNavigate }: GerenteMenuAppProps) {
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Estados para la paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
-  const loadMenu = async () => {
+  const loadMenu = async (pageToFetch = 1) => {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchMenuItems(branchId);
+      const data = await fetchMenuItems(branchId, searchTerm, selectedCategory, pageToFetch);
+      
+      // Maneja si el backend responde con objeto paginado { data, total, page, pageSize } o arreglo directo
       const list = Array.isArray(data) ? data : (data.data || []);
       setItems(list);
+      
+      if (!Array.isArray(data)) {
+        setTotalItems(data.total || list.length);
+        const size = data.pageSize || 10;
+        setTotalPages(Math.ceil((data.total || list.length) / size));
+        setCurrentPage(data.page || pageToFetch);
+      }
     } catch (err: any) {
       setError(err.message || 'Error al cargar el menú');
     } finally {
@@ -30,8 +44,8 @@ export function GerenteMenuApp({ onNavigate }: GerenteMenuAppProps) {
   };
 
   useEffect(() => {
-    loadMenu();
-  }, []);
+    loadMenu(currentPage);
+  }, [currentPage, selectedCategory]);
 
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -55,12 +69,20 @@ export function GerenteMenuApp({ onNavigate }: GerenteMenuAppProps) {
         <p className="subtitle-desc">Administración de productos, precios y disponibilidad en tiempo real.</p>
 
         <div className="card-catalog">
-          <div className="catalog-header-text">
-            <span className="catalog-tag">CATÁLOGO</span>
-            <h2>Menú de Centro</h2>
+          <div className="catalog-header-text" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span className="catalog-tag">CATÁLOGO</span>
+              <h2>Menú de Centro</h2>
+            </div>
+            <button 
+              onClick={() => loadMenu(currentPage)}
+              style={{ background: '#334155', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+            >
+              🔄 Actualizar lista
+            </button>
           </div>
 
-          <div className="filters-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <div className="filters-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
             <div className="filter-group" style={{ flex: 1 }}>
               <label>Buscar por nombre</label>
               <input 
@@ -75,7 +97,10 @@ export function GerenteMenuApp({ onNavigate }: GerenteMenuAppProps) {
               <label>Categoría</label>
               <select 
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setCurrentPage(1); // Reiniciar a la página 1 al cambiar filtro
+                }}
                 style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #334155' }}
               >
                 <option value="Todas">Todas</option>
@@ -88,7 +113,7 @@ export function GerenteMenuApp({ onNavigate }: GerenteMenuAppProps) {
           </div>
 
           <div className="table-actions-bar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
-            <span className="pill-count">{filteredItems.length} platillos encontrados</span>
+            <span className="pill-count">{totalItems > 0 ? `${totalItems} platillos totales (Mostrando página ${currentPage})` : `${filteredItems.length} platillos encontrados`}</span>
             <button 
               className="btn-primary-green" 
               onClick={() => onNavigate('/management/menu/new')}
@@ -109,7 +134,7 @@ export function GerenteMenuApp({ onNavigate }: GerenteMenuAppProps) {
                   {filteredItems.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="text-center empty-state" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                        No hay platillos registrados.
+                        No hay platillos registrados en esta página.
                       </td>
                     </tr>
                   ) : (
@@ -136,7 +161,6 @@ export function GerenteMenuApp({ onNavigate }: GerenteMenuAppProps) {
                         </td>
                         <td className="text-right action-links" style={{ textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                            {/* Botón Activar / Desactivar único */}
                             <button 
                               onClick={() => onNavigate(`/management/menu/${item.id}/availability`, { 
                                 itemId: item.id, 
@@ -163,6 +187,28 @@ export function GerenteMenuApp({ onNavigate }: GerenteMenuAppProps) {
                   )}
                 </tbody>
               </table>
+
+              {/* Botones de Paginación */}
+              <div className="pagination-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', borderTop: '1px solid #334155', paddingTop: '1rem' }}>
+                <button 
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  style={{ background: currentPage <= 1 ? '#1e293b' : '#334155', color: currentPage <= 1 ? '#64748b' : '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: currentPage <= 1 ? 'not-allowed' : 'pointer' }}
+                >
+                  ← Anterior
+                </button>
+                <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
+                  Página <strong>{currentPage}</strong> de {totalPages || 1}
+                </span>
+                <button 
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  style={{ background: currentPage >= totalPages ? '#1e293b' : '#334155', color: currentPage >= totalPages ? '#64748b' : '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer' }}
+                >
+                  Siguiente →
+                </button>
+              </div>
+
             </div>
           )}
         </div>

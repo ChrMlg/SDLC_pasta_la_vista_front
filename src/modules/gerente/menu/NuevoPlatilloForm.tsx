@@ -7,7 +7,7 @@ interface NuevoPlatilloFormProps {
 }
 
 export function NuevoPlatilloForm({ onNavigate }: NuevoPlatilloFormProps) {
-  // UUID fijo de la sucursal Centro
+  // ID fijo de la sucursal Centro
   const branchId = 'a1111111-1111-4111-8111-111111111111';
 
   const [name, setName] = useState('');
@@ -18,6 +18,7 @@ export function NuevoPlatilloForm({ onNavigate }: NuevoPlatilloFormProps) {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Valida y envía los datos del formulario al backend
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -44,6 +45,7 @@ export function NuevoPlatilloForm({ onNavigate }: NuevoPlatilloFormProps) {
       setDescription('');
       setPrice('');
       
+      // Redirige al listado del menú tras un breve momento
       setTimeout(() => {
         onNavigate('/management/menu');
       }, 1500);

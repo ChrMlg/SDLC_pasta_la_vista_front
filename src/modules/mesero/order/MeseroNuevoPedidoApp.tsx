@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fetchAllWaiterMenuItems, createWaiterOrder } from './mesero-order-api';
 import './mesero-order.css';
 
 interface OrderItem {
@@ -29,30 +30,35 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadWaiterMenu();
-  }, [selectedBranch]);
-
   const loadWaiterMenu = async () => {
     try {
       setLoading(true);
       setError('');
       const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
       
-      const response = await fetch(`/api/branches/${branchId}/menu`, {
-        credentials: 'include',
+      const allMenuItems = await fetchAllWaiterMenuItems(branchId);
+
+      setItems(prevItems => {
+        const qtyMap = new Map(prevItems.map(i => [i.id, i.quantity]));
+        return allMenuItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          price: Number(item.price),
+          isAvailable: item.isAvailable,
+          quantity: qtyMap.get(item.id) || 0,
+        }));
       });
-      if (!response.ok) throw new Error('Error al obtener el menú para el mesero');
-      const data = await response.json();
-      const list = Array.isArray(data) ? data : (data.data || []);
-      
-      setItems(list.map((item: any) => ({ ...item, quantity: 0 })));
-    } catch (err) {
-      setError('No se pudo conectar con el servidor para cargar el menú.');
+    } catch (err: any) {
+      setError(err.message || 'No se pudo conectar con el servidor para cargar el menú.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadWaiterMenu();
+  }, [selectedBranch]);
 
   const getCategoryLabel = (cat: string) => {
     const map: Record<string, string> = {
@@ -102,7 +108,6 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
       setError('');
       const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
 
-      // items seleccionados para el payload del backend
       const orderItems = items
         .filter(item => item.quantity > 0)
         .map(item => ({
@@ -111,25 +116,12 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
           notes: specialNotes || undefined,
         }));
 
-      const payload = {
+      await createWaiterOrder({
         branchId,
         serviceType,
         tableNumber: serviceType === 'DINE_IN' ? tableNumber : null,
         items: orderItems,
-      };
-
-      // Petición POST al backend para registrar la orden (H4)
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Error al registrar el pedido en el servidor');
-      }
 
       alert('¡Pedido registrado y enviado a cocina con éxito!');
       onNavigate('/waiter/orders/confirm');
@@ -156,10 +148,19 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
         <h1>Registro de pedido por mesero</h1>
 
         <div className="card-order-catalog">
-          <div className="catalog-header-text">
-            <span className="catalog-tag">GESTIÓN DE PEDIDOS</span>
-            <h2>Tomar nuevo pedido</h2>
-            <p>Registra el pedido para enviar directamente a cocina respetando la disponibilidad.</p>
+          <div className="catalog-header-text" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span className="catalog-tag">GESTIÓN DE PEDIDOS</span>
+              <h2>Tomar nuevo pedido</h2>
+              <p>Registra el pedido para enviar directamente a cocina respetando la disponibilidad.</p>
+            </div>
+            <button 
+              type="button"
+              onClick={loadWaiterMenu}
+              style={{ background: '#334155', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+            >
+              🔄 Actualizar menú
+            </button>
           </div>
 
           {error && <div className="alert-error" style={{ background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem' }}>{error}</div>}
@@ -209,7 +210,7 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
 
           <div className="menu-filter-section">
             <div className="form-group search-bar-mesero">
-              <label>Buscar platillo en el menú</label>
+              <label>Buscar platillo en el menú ({filteredItems.length} disponibles en vista)</label>
               <input
                 type="text"
                 placeholder="Buscar por nombre..."
@@ -234,7 +235,7 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
 
           <div className="order-items-list">
             {loading ? (
-              <div className="empty-menu-state">Cargando menú del servidor...</div>
+              <div className="empty-menu-state">Cargando catálogo completo del servidor...</div>
             ) : filteredItems.length === 0 ? (
               <div className="empty-menu-state">No se encontraron platillos con ese filtro.</div>
             ) : (

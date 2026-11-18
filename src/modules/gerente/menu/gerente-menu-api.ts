@@ -9,15 +9,24 @@ export interface MenuItemResponse {
   isAvailable: boolean;
 }
 
-export async function fetchMenuItems(branchId: string, search?: string, category?: string) {
+export async function fetchMenuItems(branchId: string, search?: string, category?: string, page: number = 1) {
   let url = `${API_URL}/branches/${branchId}/menu-items`;
   const params = new URLSearchParams();
+  
   if (search) params.append('search', search);
   if (category && category !== 'Todas') params.append('category', category);
+  
+  // Enviamos la página actual para que el backend nos devuelva el bloque correcto
+  params.append('page', page.toString());
+
   if (params.toString()) url += `?${params.toString()}`;
 
   const res = await fetch(url, {
     method: 'GET',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    },
     credentials: 'include',
   });
   
@@ -35,12 +44,10 @@ export async function createMenuItem(branchId: string, data: {
   category: string;
   price: string | number;
 }) {
-  // Reemplazamos cualquier coma por punto y convertimos a número flotante de forma segura
-  const cleanPrice = parseFloat(String(data.price).replace(',', '.')) || 0;
+  const cleanPrice = parseFloat(String(data.price ?? '').trim().replace(',', '.')) || 0;
 
   const payload = {
     ...data,
-    // Forzamos el precio a string con dos decimales exactos utilizando punto (ej. "5.00")
     price: cleanPrice.toFixed(2),
   };
 
