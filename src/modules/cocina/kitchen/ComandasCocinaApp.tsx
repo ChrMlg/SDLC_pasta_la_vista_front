@@ -4,24 +4,32 @@ import './cocina.css';
 interface KitchenOrderRaw {
   id?: string;
   orderId?: string;
+  orderNumber?: number | string;
   status?: string;
   state?: string;
+  type?: string;
   serviceType?: string;
+  tableLabel?: string | null;
   tableNumber?: string | null;
   tableName?: string | null;
   minutesWaiting?: number;
+  enteredAt?: string;
   createdAt?: string;
   assignedCook?: string | { name?: string } | null;
   items?: Array<{
+    id?: string;
     name?: string;
     dishName?: string;
     menuItem?: { name?: string };
     quantity?: number;
+    note?: string | null;
+    isReady?: boolean;
   }>;
 }
 
 interface ComandaCardData {
   id: string;
+  orderNumber?: number | string;
   status: string;
   tableOrType: string;
   itemsSummary: string[];
@@ -31,29 +39,37 @@ interface ComandaCardData {
 
 const BRANCH_MAP: Record<string, string> = {
   Centro: 'a1111111-1111-4111-8111-111111111111',
+  Bambu: 'a2222222-2222-4222-8222-222222222222',
   Bambú: 'a2222222-2222-4222-8222-222222222222',
   Ramblas: 'a3333333-3333-4333-8333-333333333333',
 };
 
 function normalizeComanda(raw: KitchenOrderRaw): ComandaCardData {
-  const id = String(raw.id ?? raw.orderId ?? '');
+  const id = String(raw.orderId ?? raw.id ?? '');
   const status = String(raw.status ?? raw.state ?? 'PENDING').toUpperCase();
 
-  const tableLabel = raw.tableNumber || raw.tableName;
-  const serviceLabel = raw.serviceType === 'TAKEAWAY' ? 'Para llevar' : 'En mesa';
-  const tableOrType = tableLabel ? `${tableLabel} · ${serviceLabel}` : serviceLabel;
+  const serviceRaw = raw.type ?? raw.serviceType;
+  const serviceLabel =
+    serviceRaw === 'TAKEAWAY' ? 'Para llevar' : serviceRaw === 'DINE_IN' ? 'En mesa' : '';
+  const tableLabel = raw.tableLabel || raw.tableNumber || raw.tableName;
+
+  const tableOrType =
+    tableLabel && serviceLabel && tableLabel.toLowerCase() !== serviceLabel.toLowerCase()
+      ? `${tableLabel} · ${serviceLabel}`
+      : tableLabel || serviceLabel || 'Pedido';
 
   const itemsSummary = Array.isArray(raw.items)
     ? raw.items.map((item) => {
-        const name = item.name || item.dishName || item.menuItem?.name || 'Platillo';
-        const qty = item.quantity ? `${item.quantity}x ` : '';
+        const name = item.dishName || item.name || item.menuItem?.name || 'Platillo';
+        const qty = item.quantity ? `${item.quantity}× ` : '';
         return `${qty}${name}`;
       })
     : [];
 
   let minutesWaiting = raw.minutesWaiting;
-  if (minutesWaiting === undefined && raw.createdAt) {
-    const diffMs = Date.now() - new Date(raw.createdAt).getTime();
+  const timeSource = raw.enteredAt || raw.createdAt;
+  if (minutesWaiting === undefined && timeSource) {
+    const diffMs = Date.now() - new Date(timeSource).getTime();
     if (!Number.isNaN(diffMs) && diffMs >= 0) {
       minutesWaiting = Math.floor(diffMs / 60000);
     }
@@ -68,6 +84,7 @@ function normalizeComanda(raw: KitchenOrderRaw): ComandaCardData {
 
   return {
     id,
+    orderNumber: raw.orderNumber,
     status,
     tableOrType,
     itemsSummary,
@@ -76,7 +93,11 @@ function normalizeComanda(raw: KitchenOrderRaw): ComandaCardData {
   };
 }
 
-export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, comandaId?: string) => void }) {
+export function ComandasCocinaApp({
+  onNavigate,
+}: {
+  onNavigate: (path: string, comandaId?: string) => void;
+}) {
   const [selectedBranch, setSelectedBranch] = useState('Centro');
   const [pendientes, setPendientes] = useState<ComandaCardData[]>([]);
   const [enPreparacion, setEnPreparacion] = useState<ComandaCardData[]>([]);
@@ -103,16 +124,22 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
       const payload = await res.json();
       const rawList: KitchenOrderRaw[] = Array.isArray(payload)
         ? payload
+        : Array.isArray(payload?.items)
+        ? payload.items
         : Array.isArray(payload?.data)
         ? payload.data
         : Array.isArray(payload?.orders)
         ? payload.orders
         : [];
 
-      const normalized = rawList.map(normalizeComanda);
+      const normalized = rawList.map(normalizeComanda).filter((c) => Boolean(c.id));
 
       const pendingList = normalized.filter(
-        (c) => c.status === 'PENDING' || c.status === 'PENDIENTE' || c.status === 'RECEIVED' || c.status === 'CREATED'
+        (c) =>
+          c.status === 'PENDING' ||
+          c.status === 'PENDIENTE' ||
+          c.status === 'RECEIVED' ||
+          c.status === 'CREATED'
       );
       const preparingList = normalized.filter(
         (c) =>
@@ -122,13 +149,22 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
           c.status === 'TAKEN'
       );
 
-      const knownIds = new Set([...pendingList.map((p) => p.id), ...preparingList.map((p) => p.id)]);
+      const knownIds = new Set([
+        ...pendingList.map((p) => p.id),
+        ...preparingList.map((p) => p.id),
+      ]);
       const remaining = normalized.filter((c) => !knownIds.has(c.id));
 
       setPendientes([...pendingList, ...remaining]);
       setEnPreparacion(preparingList);
       setConnected(true);
-      setLastSyncLabel(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      setLastSyncLabel(
+        new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+      );
     } catch (err: any) {
       setConnected(false);
       setError(err?.message || 'No se pudieron cargar las comandas de cocina.');
@@ -148,9 +184,9 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
     return () => clearInterval(interval);
   }, [fetchComandas]);
 
-  const handleOpenDetail = (comandaId?: string) => {
-    const targetId = comandaId || pendientes[0]?.id || enPreparacion[0]?.id || 'preview-order-001';
-    onNavigate('/kitchen/detail', targetId);
+  const handleOpenPreviewDetail = () => {
+    const firstOrderId = pendientes[0]?.id || enPreparacion[0]?.id || 'preview-order-001';
+    onNavigate('/kitchen/detail', firstOrderId);
   };
 
   return (
@@ -159,11 +195,15 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
         <div className="breadcrumb">
           Cocina / <strong>Comandas de cocina</strong>
         </div>
-        <div className="header-controls">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <select
-            className="branch-select"
             value={selectedBranch}
             onChange={(e) => setSelectedBranch(e.target.value)}
+            style={{
+              padding: '0.35rem 0.65rem',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+            }}
           >
             <option value="Centro">Centro</option>
             <option value="Bambú">Bambú</option>
@@ -174,167 +214,176 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
       </header>
 
       <main className="cocina-content">
+        <div className="meta-info">
+          <span className="badge-h">H6 + H30 · KITCHEN</span>
+          <span className="route-tag">/kitchen</span>
+        </div>
+
         <div className="cocina-title-row">
           <div>
             <h1>Comandas de cocina</h1>
-            <p className="subtitle-desc">H6 · Cola de órdenes activas por sucursal en tiempo real.</p>
+            <p className="subtitle-desc">
+              Cola en vivo de órdenes pendientes y en preparación para la sucursal
+            </p>
           </div>
-          <button
-            type="button"
-            className="btn-cocina-primary"
-            onClick={() => handleOpenDetail()}
-          >
-            Abrir H7 · Tomar / Liberar comanda
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <span
+              className={`status-badge ${connected ? 'available' : 'unavailable'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              {connected ? `Conectado · ${lastSyncLabel}` : 'Desconectado'}
+            </span>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setLoading(true);
+                fetchComandas();
+              }}
+            >
+              Actualizar
+            </button>
+            <button type="button" className="btn-secondary" onClick={handleOpenPreviewDetail}>
+              Ver detalle (H7)
+            </button>
+          </div>
         </div>
 
-        {error && <div className="kitchen-notice-box kitchen-notice-warning">{error}</div>}
-
-        <div className="card-cocina-panel">
-          <div className="live-header-row">
-            <div>
-              <span className="catalog-tag">OPERACIÓN EN VIVO</span>
-              <h2 className="live-panel-title">Comandas de {selectedBranch}</h2>
-              <p className="live-panel-subtitle">
-                Cola de ingreso por antigüedad, actualizada cada 5 segundos.
-              </p>
-            </div>
-            <div className="live-actions-group">
-              <div className="live-buttons-row">
-                <button
-                  type="button"
-                  className="btn-cocina-primary"
-                  onClick={() => handleOpenDetail()}
-                >
-                  Ver detalle (H7)
-                </button>
-                <button
-                  type="button"
-                  className="btn-cocina-dark"
-                  onClick={fetchComandas}
-                >
-                  Actualizar
-                </button>
-                <div className={`connection-pill ${!connected ? 'disconnected' : ''}`}>
-                  <span className="connection-dot"></span>
-                  {connected ? 'Conectado' : 'Sin conexión'}
-                </div>
-              </div>
-              <span className="sync-time">Última sync: {lastSyncLabel}</span>
-            </div>
+        {error && (
+          <div
+            style={{
+              background: '#ef4444',
+              color: '#fff',
+              padding: '0.65rem 0.9rem',
+              borderRadius: '6px',
+              marginBottom: '1rem',
+              fontSize: '0.9rem',
+            }}
+          >
+            {error}
           </div>
+        )}
 
-          <div className="kitchen-columns-grid">
-            {/* Columna de Pendientes */}
-            <div className="kitchen-column">
-              <div className="column-title">
-                <span>Pendientes</span>
-                <span className="pill-count">{pendientes.length}</span>
+        {loading && pendientes.length === 0 && enPreparacion.length === 0 ? (
+          <p style={{ color: '#64748b' }}>Cargando comandas...</p>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '1.25rem',
+              marginTop: '1rem',
+            }}
+          >
+            <section className="card-order-catalog">
+              <div className="catalog-header-text">
+                <span className="catalog-tag">PENDIENTES ({pendientes.length})</span>
+                <h2>Por tomar</h2>
               </div>
 
-              {loading && pendientes.length === 0 ? (
-                <div className="empty-column-state">Cargando comandas pendientes...</div>
-              ) : pendientes.length === 0 ? (
-                <div className="empty-column-state">
-                  No hay comandas pendientes. Las órdenes nuevas aparecerán aquí en tiempo real.
-                </div>
+              {pendientes.length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                  No hay comandas pendientes en este momento.
+                </p>
               ) : (
-                pendientes.map((c) => {
-                  const isOverdue = typeof c.minutesWaiting === 'number' && c.minutesWaiting > 15;
-                  return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {pendientes.map((c) => (
                     <div
                       key={c.id}
-                      className={`comanda-card ${isOverdue ? 'overdue' : ''}`}
-                      onClick={() => handleOpenDetail(c.id)}
+                      onClick={() => onNavigate('/kitchen/detail', c.id)}
+                      style={{
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '0.85rem',
+                        cursor: 'pointer',
+                        background: '#f8fafc',
+                      }}
                     >
-                      <div className="comanda-card-top">
-                        <span className="comanda-origin">{c.tableOrType}</span>
-                        <span className="comanda-badge">
-                          {isOverdue ? `+15 min (${c.minutesWaiting}m)` : 'Pendiente'}
-                        </span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '0.35rem',
+                        }}
+                      >
+                        <strong>
+                          Pedido {c.orderNumber ? `#${c.orderNumber}` : `#${c.id.slice(0, 6)}`}
+                        </strong>
+                        <span className="status-badge available">{c.status}</span>
                       </div>
-
+                      <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '0.4rem' }}>
+                        {c.tableOrType}
+                        {typeof c.minutesWaiting === 'number' ? ` · ${c.minutesWaiting} min` : ''}
+                      </div>
                       {c.itemsSummary.length > 0 && (
-                        <ul className="comanda-items-list">
+                        <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.88rem' }}>
                           {c.itemsSummary.map((line, idx) => (
-                            <li key={`${c.id}-${idx}`}>{line}</li>
+                            <li key={idx}>{line}</li>
                           ))}
                         </ul>
                       )}
-
-                      <div className="comanda-card-footer">
-                        <span>#{c.id.slice(0, 8)}</span>
-                        <button
-                          type="button"
-                          className="btn-cocina-mini"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDetail(c.id);
-                          }}
-                        >
-                          Gestionar (H7)
-                        </button>
-                      </div>
                     </div>
-                  );
-                })
+                  ))}
+                </div>
               )}
-            </div>
+            </section>
 
-            {/* Columna En preparación */}
-            <div className="kitchen-column">
-              <div className="column-title">
-                <span>En preparación</span>
-                <span className="pill-count">{enPreparacion.length}</span>
+            <section className="card-order-catalog">
+              <div className="catalog-header-text">
+                <span className="catalog-tag">EN PREPARACIÓN ({enPreparacion.length})</span>
+                <h2>En cocina</h2>
               </div>
 
-              {loading && enPreparacion.length === 0 ? (
-                <div className="empty-column-state">Cargando comandas en preparación...</div>
-              ) : enPreparacion.length === 0 ? (
-                <div className="empty-column-state">No hay comandas en preparación actualmente.</div>
+              {enPreparacion.length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                  No hay comandas en preparación en este momento.
+                </p>
               ) : (
-                enPreparacion.map((c) => (
-                  <div
-                    key={c.id}
-                    className="comanda-card"
-                    onClick={() => handleOpenDetail(c.id)}
-                  >
-                    <div className="comanda-card-top">
-                      <span className="comanda-origin">{c.tableOrType}</span>
-                      <span className="comanda-badge">En preparación</span>
-                    </div>
-
-                    {c.itemsSummary.length > 0 && (
-                      <ul className="comanda-items-list">
-                        {c.itemsSummary.map((line, idx) => (
-                          <li key={`${c.id}-${idx}`}>{line}</li>
-                        ))}
-                      </ul>
-                    )}
-
-                    <div className="comanda-card-footer">
-                      <span>{c.assignedCook ? `Cocina: ${c.assignedCook}` : `#${c.id.slice(0, 8)}`}</span>
-                      <button
-                        type="button"
-                        className="btn-cocina-mini"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDetail(c.id);
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {enPreparacion.map((c) => (
+                    <div
+                      key={c.id}
+                      onClick={() => onNavigate('/kitchen/detail', c.id)}
+                      style={{
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '0.85rem',
+                        cursor: 'pointer',
+                        background: '#f8fafc',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '0.35rem',
                         }}
                       >
-                        Gestionar (H7)
-                      </button>
+                        <strong>
+                          Pedido {c.orderNumber ? `#${c.orderNumber}` : `#${c.id.slice(0, 6)}`}
+                        </strong>
+                        <span className="status-badge available">{c.status}</span>
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '0.4rem' }}>
+                        {c.tableOrType}
+                        {c.assignedCook ? ` · Cocinero: ${c.assignedCook}` : ''}
+                      </div>
+                      {c.itemsSummary.length > 0 && (
+                        <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.88rem' }}>
+                          {c.itemsSummary.map((line, idx) => (
+                            <li key={idx}>{line}</li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
-            </div>
+            </section>
           </div>
-
-          <div className="kitchen-notice-box">
-            Las pendientes de más de 15 min se resaltan. Los pedidos para llevar entran solo tras pago PAID.
-          </div>
-        </div>
+        )}
       </main>
     </div>
   );

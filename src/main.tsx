@@ -5,7 +5,11 @@ import { GerenteMenuApp } from './modules/gerente/menu/GerenteMenuApp';
 import { NuevoPlatilloForm } from './modules/gerente/menu/NuevoPlatilloForm';
 import { ConfirmarDisponibilidad } from './modules/gerente/menu/ConfirmarDisponibilidad';
 import { MeseroNuevoPedidoApp } from './modules/mesero/order/MeseroNuevoPedidoApp';
+import { PedidosAvisosMeseroApp, WaiterOrderNotification } from './modules/mesero/tracking/PedidosAvisosMeseroApp';
+import { RecogidaEntregaApp } from './modules/mesero/tracking/RecogidaEntregaApp';
 import { ClientePedidoApp } from './modules/cliente/order/ClientePedidoApp';
+import { RevisarPedidoApp } from './modules/cliente/order/RevisarPedidoApp';
+import { PedidoCreadoApp } from './modules/cliente/order/PedidoCreadoApp';
 import { ClienteMenuApp } from './modules/cliente/menu/ClienteMenuApp';
 import { ComandasCocinaApp } from './modules/cocina/kitchen/ComandasCocinaApp';
 import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp';
@@ -19,11 +23,17 @@ function MainTest() {
   const [currentPath, setCurrentPath] = useState('/management/menu');
   const [availabilityParams, setAvailabilityParams] = useState<any>(null);
   const [orderReviewData, setOrderReviewData] = useState<any>(null);
+  const [orderCreatedData, setOrderCreatedData] = useState<any>(null);
   const [selectedComandaId, setSelectedComandaId] = useState<string | null>(null);
+  const [selectedWaiterOrder, setSelectedWaiterOrder] = useState<WaiterOrderNotification | null>(null);
 
   const handleNavigate = (path: string, params?: any) => {
     if (path.includes('/review') && params) {
       setOrderReviewData(params);
+    } else if ((path.includes('/created') || path.includes('/my-orders')) && params) {
+      setOrderCreatedData(params);
+    } else if (path.includes('/waiter/orders/delivery') && params && typeof params === 'object') {
+      setSelectedWaiterOrder(params);
     } else if (path.includes('/kitchen') && typeof params === 'string') {
       setSelectedComandaId(params);
     } else if (params) {
@@ -71,8 +81,73 @@ function MainTest() {
         </>
       )}
 
-      {userRole === 'WAITER' && currentPath.includes('/waiter') && (
-        <MeseroNuevoPedidoApp onNavigate={handleNavigate} />
+      {userRole === 'WAITER' && (
+        <>
+          <nav
+            style={{
+              background: '#0f172a',
+              color: '#fff',
+              padding: '0.6rem 1.5rem',
+              display: 'flex',
+              gap: '0.65rem',
+              alignItems: 'center',
+              fontSize: '0.85rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ fontWeight: 'bold', color: '#34d399' }}>Mesero:</span>
+            <button
+              type="button"
+              onClick={() => setCurrentPath('/waiter/orders/new')}
+              style={{
+                background: currentPath === '/waiter/orders/new' ? '#064e3b' : 'transparent',
+                border: '1px solid #334155',
+                color: '#fff',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Nuevo pedido (H4)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPath('/waiter/orders')}
+              style={{
+                background: currentPath === '/waiter/orders' ? '#064e3b' : 'transparent',
+                border: '1px solid #334155',
+                color: '#fff',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Pedidos y avisos (H9 + H29)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPath('/waiter/orders/delivery')}
+              style={{
+                background: currentPath === '/waiter/orders/delivery' ? '#064e3b' : 'transparent',
+                border: '1px solid #334155',
+                color: '#fff',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Recogida y entrega (H9)
+            </button>
+          </nav>
+
+          {currentPath === '/waiter/orders/new' && <MeseroNuevoPedidoApp onNavigate={handleNavigate} />}
+
+          {currentPath === '/waiter/orders' && <PedidosAvisosMeseroApp onNavigate={handleNavigate} />}
+
+          {currentPath === '/waiter/orders/delivery' && (
+            <RecogidaEntregaApp onNavigate={handleNavigate} selectedOrder={selectedWaiterOrder} />
+          )}
+        </>
       )}
 
       {userRole === 'CUSTOMER' && (
@@ -86,6 +161,7 @@ function MainTest() {
               gap: '0.75rem',
               alignItems: 'center',
               fontSize: '0.85rem',
+              flexWrap: 'wrap',
             }}
           >
             <span style={{ fontWeight: 'bold', color: '#34d399' }}>Cliente:</span>
@@ -117,6 +193,37 @@ function MainTest() {
             >
               Pedido autoservicio (H5)
             </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPath('/orders/review')}
+              style={{
+                background: currentPath === '/orders/review' ? '#064e3b' : 'transparent',
+                border: '1px solid #334155',
+                color: '#fff',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Revisar pedido
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPath('/orders/created')}
+              style={{
+                background:
+                  currentPath === '/orders/created' || currentPath === '/my-orders'
+                    ? '#064e3b'
+                    : 'transparent',
+                border: '1px solid #334155',
+                color: '#fff',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Pedido creado
+            </button>
           </nav>
 
           {currentPath === '/branches/menu' && <ClienteMenuApp onNavigate={handleNavigate} />}
@@ -124,27 +231,11 @@ function MainTest() {
           {currentPath === '/orders/new' && <ClientePedidoApp onNavigate={handleNavigate} />}
 
           {currentPath === '/orders/review' && (
-            <div style={{ padding: '2rem', color: '#fff', background: '#0f172a', minHeight: '100vh' }}>
-              <h2>Resumen del pedido</h2>
-              <pre style={{ background: '#1e293b', padding: '1rem', borderRadius: '6px' }}>
-                {JSON.stringify(orderReviewData, null, 2)}
-              </pre>
-              <button
-                type="button"
-                onClick={() => setCurrentPath('/orders/new')}
-                style={{
-                  background: '#059669',
-                  color: '#fff',
-                  padding: '0.5rem 1rem',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  marginTop: '1rem',
-                }}
-              >
-                ← Volver al menú
-              </button>
-            </div>
+            <RevisarPedidoApp onNavigate={handleNavigate} orderData={orderReviewData} />
+          )}
+
+          {(currentPath === '/orders/created' || currentPath === '/my-orders') && (
+            <PedidoCreadoApp onNavigate={handleNavigate} createdData={orderCreatedData} />
           )}
         </>
       )}

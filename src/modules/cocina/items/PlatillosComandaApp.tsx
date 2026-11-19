@@ -11,6 +11,7 @@ interface PlatilloItem {
   id: string;
   name: string;
   quantity: number;
+  note?: string | null;
   isReady: boolean;
   timeOrStatus: string;
 }
@@ -21,6 +22,7 @@ export function PlatillosComandaApp({
   branchId = 'a1111111-1111-4111-8111-111111111111',
 }: PlatillosComandaProps) {
   const [platillos, setPlatillos] = useState<PlatilloItem[]>([]);
+  const [orderNumber, setOrderNumber] = useState<number | string | null>(null);
   const [orderStatus, setOrderStatus] = useState<string>('EN PROCESO');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -44,14 +46,18 @@ export function PlatillosComandaApp({
       const payload = await res.json();
       const list: any[] = Array.isArray(payload)
         ? payload
+        : Array.isArray(payload?.items)
+        ? payload.items
         : Array.isArray(payload?.data)
         ? payload.data
         : Array.isArray(payload?.orders)
         ? payload.orders
         : [];
 
-      const found = list.find((o) => String(o?.id ?? o?.orderId ?? '') === String(comandaId));
+      const found = list.find((o) => String(o?.orderId ?? o?.id ?? '') === String(comandaId));
       if (!found) return;
+
+      if (found.orderNumber !== undefined) setOrderNumber(found.orderNumber);
 
       const rawItems: any[] = Array.isArray(found.items) ? found.items : [];
       const mapped: PlatilloItem[] = rawItems.map((it, idx) => {
@@ -61,8 +67,9 @@ export function PlatillosComandaApp({
           : '';
         return {
           id: String(it?.id ?? it?.itemId ?? `${comandaId}-${idx}`),
-          name: it?.name || it?.dishName || it?.menuItem?.name || 'Platillo',
+          name: it?.dishName || it?.name || it?.menuItem?.name || 'Platillo',
           quantity: Number(it?.quantity ?? 1),
+          note: it?.note ?? it?.notes ?? null,
           isReady,
           timeOrStatus: isReady ? `Listo${readyAtLabel ? ` · ${readyAtLabel}` : ''}` : 'Pendiente',
         };
@@ -70,7 +77,9 @@ export function PlatillosComandaApp({
 
       setPlatillos(mapped);
       const allReady = mapped.length > 0 && mapped.every((p) => p.isReady);
-      setOrderStatus(allReady ? 'READY' : String(found.status ?? found.state ?? 'EN PROCESO').toUpperCase());
+      setOrderStatus(
+        allReady ? 'READY' : String(found.status ?? found.state ?? 'EN PROCESO').toUpperCase()
+      );
     } catch {
       // Mantiene la lista actual si ocurre un error de red temporal
     } finally {
@@ -101,7 +110,9 @@ export function PlatillosComandaApp({
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody?.message || `No se pudo marcar el platillo como listo (${res.status}).`);
+        throw new Error(
+          errBody?.message || `No se pudo marcar el platillo como listo (${res.status}).`
+        );
       }
 
       setMessage('Platillo marcado como listo.');
@@ -120,7 +131,8 @@ export function PlatillosComandaApp({
   };
 
   const totalListos = platillos.filter((p) => p.isReady).length;
-  const progresoPorcentaje = platillos.length > 0 ? Math.round((totalListos / platillos.length) * 100) : 0;
+  const progresoPorcentaje =
+    platillos.length > 0 ? Math.round((totalListos / platillos.length) * 100) : 0;
   const isAllReady = platillos.length > 0 && totalListos === platillos.length;
 
   return (
@@ -156,7 +168,11 @@ export function PlatillosComandaApp({
           <div className="live-header-row">
             <div>
               <span className="catalog-tag">
-                COMANDA {comandaId ? `#${comandaId.slice(0, 8)}` : 'ACTIVA'}
+                {orderNumber
+                  ? `PEDIDO #${orderNumber}`
+                  : comandaId
+                  ? `COMANDA #${comandaId.slice(0, 8)}`
+                  : 'COMANDA ACTIVA'}
               </span>
               <h2 className="panel-title">Marca cada platillo listo</h2>
               <p className="panel-subtitle">
@@ -175,7 +191,9 @@ export function PlatillosComandaApp({
 
           <div className="detalle-box">
             <div className="detalle-header">
-              <strong>{platillos.length} platillos</strong>
+              <strong>
+                {platillos.length} {platillos.length === 1 ? 'platillo' : 'platillos'}
+              </strong>
               <span className={`comanda-badge ${isAllReady ? 'badge-ready' : ''}`}>
                 {isAllReady ? 'READY' : orderStatus}
               </span>
@@ -183,7 +201,8 @@ export function PlatillosComandaApp({
 
             {platillos.length === 0 ? (
               <div className="empty-column-state">
-                No hay platillos cargados en esta comanda. Los elementos aparecerán aquí al seleccionar una comanda activa.
+                No hay platillos cargados en esta comanda. Los elementos aparecerán aquí al
+                seleccionar una comanda activa.
               </div>
             ) : (
               <div className="platillos-list">
@@ -191,9 +210,16 @@ export function PlatillosComandaApp({
                   <div key={p.id} className="platillo-row">
                     <div className="platillo-info-left">
                       <span className={`platillo-check ${p.isReady ? 'done' : ''}`}>✓</span>
-                      <span>
-                        {p.name} ×{p.quantity}
-                      </span>
+                      <div>
+                        <span>
+                          {p.name} ×{p.quantity}
+                        </span>
+                        {p.note && (
+                          <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                            Nota: {p.note}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex-gap-sm">
                       <span className="platillo-status">{p.timeOrStatus}</span>
@@ -221,7 +247,10 @@ export function PlatillosComandaApp({
                 </strong>
               </div>
               <div className="progress-bar-bg">
-                <div className="progress-bar-fill" style={{ width: `${progresoPorcentaje}%` }}></div>
+                <div
+                  className="progress-bar-fill"
+                  style={{ width: `${progresoPorcentaje}%` }}
+                ></div>
               </div>
             </div>
           </div>

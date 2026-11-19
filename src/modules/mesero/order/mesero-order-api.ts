@@ -13,7 +13,7 @@ export interface PublicMenuItem {
 export interface CreateOrderPayload {
   branchId: string;
   serviceType: 'DINE_IN' | 'TAKEAWAY';
-  tableNumber: string | null;
+  tableId?: string | null;
   items: {
     menuItemId: string;
     quantity: number;
@@ -27,7 +27,7 @@ export async function fetchAllWaiterMenuItems(branchId: string): Promise<PublicM
   let currentPage = 1;
   let hasMore = true;
 
-  while (hasMore && currentPage <= 10) { // Límite de seguridad de 10 páginas (100 platillos)
+  while (hasMore && currentPage <= 10) {
     const params = new URLSearchParams();
     params.append('page', currentPage.toString());
 
@@ -41,7 +41,7 @@ export async function fetchAllWaiterMenuItems(branchId: string): Promise<PublicM
     });
 
     if (!res.ok) {
-      break; // Si una página falla o no existe, detenemos el ciclo de forma segura
+      break;
     }
 
     const responseData = await res.json();
@@ -53,7 +53,7 @@ export async function fetchAllWaiterMenuItems(branchId: string): Promise<PublicM
       allItems = [...allItems, ...pageItems];
       currentPage++;
       if (pageItems.length < 10) {
-        hasMore = false; // Si trae menos de 10, era la última página
+        hasMore = false;
       }
     }
   }
@@ -62,16 +62,33 @@ export async function fetchAllWaiterMenuItems(branchId: string): Promise<PublicM
 }
 
 export async function createWaiterOrder(payload: CreateOrderPayload) {
+  const mappedItems = payload.items.map((item) => ({
+    dishId: item.menuItemId,
+    quantity: item.quantity,
+    ...(item.notes ? { notes: item.notes } : {}),
+  }));
+
+  const apiBody: Record<string, unknown> = {
+    branchId: payload.branchId,
+    type: payload.serviceType,
+    items: mappedItems,
+  };
+
+  if (payload.serviceType === 'DINE_IN' && payload.tableId) {
+    apiBody.tableId = payload.tableId;
+  }
+
   const res = await fetch(`${API_URL}/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(payload),
+    body: JSON.stringify(apiBody),
   });
 
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.message || 'Error al registrar el pedido en el servidor');
+    const msg = Array.isArray(errData.message) ? errData.message.join(', ') : errData.message;
+    throw new Error(msg || 'Error al registrar el pedido en el servidor');
   }
 
   return res.json();

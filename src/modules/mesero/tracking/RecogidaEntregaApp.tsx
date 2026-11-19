@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './mesero-tracking.css';
 import { WaiterOrderNotification } from './PedidosAvisosMeseroApp';
 
@@ -7,22 +7,28 @@ interface RecogidaEntregaProps {
   selectedOrder?: WaiterOrderNotification | null;
 }
 
-export function RecogidaEntregaApp({ onNavigate, selectedOrder }: RecogidaEntregaProps) {
-  // Estados preparados para conectar con PATCH /api/orders/:id/pickup y PATCH /api/orders/:id/deliver
+export function RecogidaEntregaApp({
+  onNavigate,
+  selectedOrder,
+}: RecogidaEntregaProps) {
   const [stepStatus, setStepStatus] = useState<'READY' | 'OUT_FOR_DELIVERY' | 'DELIVERED'>('READY');
 
+  useEffect(() => {
+    if (selectedOrder?.status === 'OUT_FOR_DELIVERY' || selectedOrder?.status === 'DELIVERED') {
+      setStepStatus(selectedOrder.status);
+    } else {
+      setStepStatus('READY');
+    }
+  }, [selectedOrder]);
+
   const handlePickup = () => {
+    if (!selectedOrder) return;
     setStepStatus('OUT_FOR_DELIVERY');
-    alert('Pedido marcado como recogido (OUT_FOR_DELIVERY).');
   };
 
   const handleDeliver = () => {
-    if (stepStatus !== 'OUT_FOR_DELIVERY') {
-      alert('No puedes confirmar entrega antes de recoger el pedido.');
-      return;
-    }
+    if (!selectedOrder || stepStatus !== 'OUT_FOR_DELIVERY') return;
     setStepStatus('DELIVERED');
-    alert('Entrega al cliente confirmada (DELIVERED).');
   };
 
   return (
@@ -31,40 +37,40 @@ export function RecogidaEntregaApp({ onNavigate, selectedOrder }: RecogidaEntreg
         <div className="breadcrumb">
           Mesero / <strong>Recogida y entrega</strong>
         </div>
+        <span className="branch-badge">H9 · WAITER</span>
       </header>
 
       <main className="mesero-track-content">
-        <div className="meta-info">
-          <span className="route-tag">/waiter/orders/:id/delivery</span>
-        </div>
-
         <h1>Recogida y entrega</h1>
+        <p className="subtitle-desc">
+          Confirmación secuencial de recogida y entrega al cliente.
+        </p>
 
         <div className="card-track-panel">
           {!selectedOrder ? (
-            /* Estado vacío cuando aún no se ha seleccionado o recibido un pedido */
-            <div className="empty-orders-box" style={{ marginBottom: 0 }}>
-              <p style={{ margin: '0 0 1rem 0', fontWeight: 500, color: '#334155' }}>
+            <div className="empty-orders-box">
+              <p className="step-card-title">
                 No hay ningún pedido seleccionado para recogida o entrega en este momento.
               </p>
-              <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.85rem' }}>
-                Cuando recibas un pedido en estado listo desde tus avisos, aquí aparecerán los pasos de confirmación.
+              <p className="step-card-desc">
+                Cuando recibas o selecciones un pedido listo desde tus avisos, aquí aparecerán los pasos.
               </p>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => onNavigate('/waiter/orders')}
-              >
-                ← Ir a pedidos y avisos
-              </button>
+              <div className="step-action-row">
+                <button
+                  type="button"
+                  className="btn-cocina btn-secondary"
+                  onClick={() => onNavigate('/waiter/orders')}
+                >
+                  ← Ir a pedidos y avisos
+                </button>
+              </div>
             </div>
           ) : (
-            /* Flujo de 3 pasos que se despliega dinámicamente al recibir/seleccionar el pedido */
             <>
-              <div className="catalog-header-text">
+              <div>
                 <span className="catalog-tag">PEDIDO #{selectedOrder.orderNumber}</span>
-                <h2>Confirmar entrega</h2>
-                <p>Cada paso tiene su propio estado permitido.</p>
+                <h2 className="panel-title">Confirmar entrega</h2>
+                <p className="panel-subtitle">Cada paso tiene su propio estado permitido.</p>
               </div>
 
               <div className="alert-rule-banner">
@@ -72,7 +78,6 @@ export function RecogidaEntregaApp({ onNavigate, selectedOrder }: RecogidaEntreg
               </div>
 
               <div className="delivery-steps-list">
-                {/* Paso 1 */}
                 <div className="delivery-step-card step-done">
                   <div className="step-card-header">
                     <span className="step-card-title">1. Cocina terminó</span>
@@ -81,7 +86,6 @@ export function RecogidaEntregaApp({ onNavigate, selectedOrder }: RecogidaEntreg
                   <p className="step-card-desc">Los platillos están listos para salir.</p>
                 </div>
 
-                {/* Paso 2 */}
                 <div className={`delivery-step-card ${stepStatus !== 'READY' ? 'step-done' : ''}`}>
                   <div className="step-card-header">
                     <span className="step-card-title">2. Pedido recogido</span>
@@ -90,7 +94,7 @@ export function RecogidaEntregaApp({ onNavigate, selectedOrder }: RecogidaEntreg
                   <div className="step-action-row">
                     <button
                       type="button"
-                      className="btn-primary-green"
+                      className="btn-cocina btn-primary"
                       onClick={handlePickup}
                       disabled={stepStatus !== 'READY'}
                     >
@@ -99,7 +103,6 @@ export function RecogidaEntregaApp({ onNavigate, selectedOrder }: RecogidaEntreg
                   </div>
                 </div>
 
-                {/* Paso 3 */}
                 <div className={`delivery-step-card ${stepStatus === 'DELIVERED' ? 'step-done' : ''}`}>
                   <div className="step-card-header">
                     <span className="step-card-title">3. Entrega al cliente</span>
@@ -108,7 +111,7 @@ export function RecogidaEntregaApp({ onNavigate, selectedOrder }: RecogidaEntreg
                   <div className="step-action-row">
                     <button
                       type="button"
-                      className="btn-primary-green"
+                      className="btn-cocina btn-primary"
                       onClick={handleDeliver}
                       disabled={stepStatus !== 'OUT_FOR_DELIVERY'}
                     >
@@ -118,14 +121,14 @@ export function RecogidaEntregaApp({ onNavigate, selectedOrder }: RecogidaEntreg
                 </div>
               </div>
 
-              <div className="footer-rule-text">
+              <p className="footer-rule-text">
                 No puedes confirmar entrega antes de recoger. Se registra quién recogió, quién entregó y la fecha.
-              </div>
+              </p>
 
-              <div style={{ marginTop: '1.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '1.25rem' }}>
+              <div className="track-footer-actions">
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn-cocina btn-secondary"
                   onClick={() => onNavigate('/waiter/orders')}
                 >
                   ← Volver a pedidos y avisos
