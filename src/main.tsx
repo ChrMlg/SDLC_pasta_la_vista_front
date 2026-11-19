@@ -8,6 +8,7 @@ import { MeseroNuevoPedidoApp } from './modules/mesero/order/MeseroNuevoPedidoAp
 import { ClientePedidoApp } from './modules/cliente/order/ClientePedidoApp';
 import { ClienteMenuApp } from './modules/cliente/menu/ClienteMenuApp';
 import { ComandasCocinaApp } from './modules/cocina/kitchen/ComandasCocinaApp';
+import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp'
 
 type UserRole = 'MANAGER' | 'WAITER' | 'CUSTOMER' | 'KITCHEN' | null;
 
@@ -153,25 +154,10 @@ function MainTest() {
           {currentPath === '/kitchen' && <ComandasCocinaApp onNavigate={handleNavigate} />}
 
           {currentPath === '/kitchen/detail' && (
-            <div style={{ padding: '2rem', color: '#fff', background: '#0f172a', minHeight: '100vh' }}>
-              <h2>Detalle de comanda (H7)</h2>
-              <p>Comanda seleccionada: {selectedComandaId || 'Ninguna'}</p>
-              <button
-                type="button"
-                onClick={() => setCurrentPath('/kitchen')}
-                style={{
-                  background: '#059669',
-                  color: '#fff',
-                  padding: '0.5rem 1rem',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  marginTop: '1rem',
-                }}
-              >
-                ← Volver a comandas
-              </button>
-            </div>
+            <DetalleComandaApp
+              comandaId={selectedComandaId || undefined}
+              onNavigate={handleNavigate}
+            />
           )}
         </>
       )}

@@ -115,10 +115,13 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
         (c) => c.status === 'PENDING' || c.status === 'PENDIENTE' || c.status === 'RECEIVED' || c.status === 'CREATED'
       );
       const preparingList = normalized.filter(
-        (c) => c.status === 'IN_PREPARATION' || c.status === 'PREPARING' || c.status === 'EN_PREPARACION' || c.status === 'TAKEN'
+        (c) =>
+          c.status === 'IN_PREPARATION' ||
+          c.status === 'PREPARING' ||
+          c.status === 'EN_PREPARACION' ||
+          c.status === 'TAKEN'
       );
 
-      // Si el backend devuelve estados distintos, los que no caigan en preparación van a pendientes por defecto
       const knownIds = new Set([...pendingList.map((p) => p.id), ...preparingList.map((p) => p.id)]);
       const remaining = normalized.filter((c) => !knownIds.has(c.id));
 
@@ -145,17 +148,22 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
     return () => clearInterval(interval);
   }, [fetchComandas]);
 
+  const handleOpenDetail = (comandaId?: string) => {
+    const targetId = comandaId || pendientes[0]?.id || enPreparacion[0]?.id || 'preview-order-001';
+    onNavigate('/kitchen/detail', targetId);
+  };
+
   return (
     <div className="cocina-container">
       <header className="cocina-header-bar">
         <div className="breadcrumb">
           Cocina / <strong>Comandas de cocina</strong>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="header-controls">
           <select
+            className="branch-select"
             value={selectedBranch}
             onChange={(e) => setSelectedBranch(e.target.value)}
-            style={{ padding: '0.35rem 0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
           >
             <option value="Centro">Centro</option>
             <option value="Bambú">Bambú</option>
@@ -166,8 +174,19 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
       </header>
 
       <main className="cocina-content">
-        <h1>Comandas de cocina</h1>
-        <p className="subtitle-desc">H6 · Cola de órdenes activas por sucursal en tiempo real.</p>
+        <div className="cocina-title-row">
+          <div>
+            <h1>Comandas de cocina</h1>
+            <p className="subtitle-desc">H6 · Cola de órdenes activas por sucursal en tiempo real.</p>
+          </div>
+          <button
+            type="button"
+            className="btn-cocina-primary"
+            onClick={() => handleOpenDetail()}
+          >
+            Abrir H7 · Tomar / Liberar comanda
+          </button>
+        </div>
 
         {error && <div className="kitchen-notice-box kitchen-notice-warning">{error}</div>}
 
@@ -175,25 +194,24 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
           <div className="live-header-row">
             <div>
               <span className="catalog-tag">OPERACIÓN EN VIVO</span>
-              <h2 style={{ margin: '0.2rem 0' }}>Comandas de {selectedBranch}</h2>
-              <p style={{ color: '#64748b', fontSize: '0.85rem', margin: 0 }}>
+              <h2 className="live-panel-title">Comandas de {selectedBranch}</h2>
+              <p className="live-panel-subtitle">
                 Cola de ingreso por antigüedad, actualizada cada 5 segundos.
               </p>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <div className="live-actions-group">
+              <div className="live-buttons-row">
                 <button
                   type="button"
+                  className="btn-cocina-primary"
+                  onClick={() => handleOpenDetail()}
+                >
+                  Ver detalle (H7)
+                </button>
+                <button
+                  type="button"
+                  className="btn-cocina-dark"
                   onClick={fetchComandas}
-                  style={{
-                    background: '#334155',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0.28rem 0.65rem',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '0.78rem',
-                  }}
                 >
                   Actualizar
                 </button>
@@ -227,7 +245,7 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
                     <div
                       key={c.id}
                       className={`comanda-card ${isOverdue ? 'overdue' : ''}`}
-                      onClick={() => onNavigate('/kitchen/detail', c.id)}
+                      onClick={() => handleOpenDetail(c.id)}
                     >
                       <div className="comanda-card-top">
                         <span className="comanda-origin">{c.tableOrType}</span>
@@ -246,7 +264,16 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
 
                       <div className="comanda-card-footer">
                         <span>#{c.id.slice(0, 8)}</span>
-                        <span>{typeof c.minutesWaiting === 'number' ? `${c.minutesWaiting} min` : c.status}</span>
+                        <button
+                          type="button"
+                          className="btn-cocina-mini"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDetail(c.id);
+                          }}
+                        >
+                          Gestionar (H7)
+                        </button>
                       </div>
                     </div>
                   );
@@ -270,7 +297,7 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
                   <div
                     key={c.id}
                     className="comanda-card"
-                    onClick={() => onNavigate('/kitchen/detail', c.id)}
+                    onClick={() => handleOpenDetail(c.id)}
                   >
                     <div className="comanda-card-top">
                       <span className="comanda-origin">{c.tableOrType}</span>
@@ -287,7 +314,16 @@ export function ComandasCocinaApp({ onNavigate }: { onNavigate: (path: string, c
 
                     <div className="comanda-card-footer">
                       <span>{c.assignedCook ? `Cocina: ${c.assignedCook}` : `#${c.id.slice(0, 8)}`}</span>
-                      <span>{typeof c.minutesWaiting === 'number' ? `${c.minutesWaiting} min` : c.status}</span>
+                      <button
+                        type="button"
+                        className="btn-cocina-mini"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDetail(c.id);
+                        }}
+                      >
+                        Gestionar (H7)
+                      </button>
                     </div>
                   </div>
                 ))
