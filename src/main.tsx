@@ -8,7 +8,8 @@ import { MeseroNuevoPedidoApp } from './modules/mesero/order/MeseroNuevoPedidoAp
 import { ClientePedidoApp } from './modules/cliente/order/ClientePedidoApp';
 import { ClienteMenuApp } from './modules/cliente/menu/ClienteMenuApp';
 import { ComandasCocinaApp } from './modules/cocina/kitchen/ComandasCocinaApp';
-import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp'
+import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp';
+import { PlatillosComandaApp } from './modules/cocina/items/PlatillosComandaApp';
 
 type UserRole = 'MANAGER' | 'WAITER' | 'CUSTOMER' | 'KITCHEN' | null;
 
@@ -38,7 +39,6 @@ function MainTest() {
           setUserRole(role);
           setIsAuthenticated(true);
 
-          // Redirección inicial según el rol detectado
           if (role === 'WAITER') {
             setCurrentPath('/waiter/orders/new');
           } else if (role === 'CUSTOMER') {
@@ -151,10 +151,74 @@ function MainTest() {
 
       {userRole === 'KITCHEN' && (
         <>
+          <nav
+            style={{
+              background: '#0f172a',
+              color: '#fff',
+              padding: '0.6rem 1.5rem',
+              display: 'flex',
+              gap: '0.65rem',
+              alignItems: 'center',
+              fontSize: '0.85rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ fontWeight: 'bold', color: '#34d399' }}>Cocina:</span>
+            <button
+              type="button"
+              onClick={() => setCurrentPath('/kitchen')}
+              style={{
+                background: currentPath === '/kitchen' ? '#064e3b' : 'transparent',
+                border: '1px solid #334155',
+                color: '#fff',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Comandas (H6)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleNavigate('/kitchen/detail', selectedComandaId || 'preview-order-001')}
+              style={{
+                background: currentPath === '/kitchen/detail' ? '#064e3b' : 'transparent',
+                border: '1px solid #334155',
+                color: '#fff',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Tomar / Liberar (H7)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleNavigate('/kitchen/items', selectedComandaId || 'preview-order-001')}
+              style={{
+                background: currentPath === '/kitchen/items' ? '#064e3b' : 'transparent',
+                border: '1px solid #334155',
+                color: '#fff',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Platillos (H8)
+            </button>
+          </nav>
+
           {currentPath === '/kitchen' && <ComandasCocinaApp onNavigate={handleNavigate} />}
 
           {currentPath === '/kitchen/detail' && (
             <DetalleComandaApp
+              comandaId={selectedComandaId || undefined}
+              onNavigate={handleNavigate}
+            />
+          )}
+
+          {currentPath === '/kitchen/items' && (
+            <PlatillosComandaApp
               comandaId={selectedComandaId || undefined}
               onNavigate={handleNavigate}
             />

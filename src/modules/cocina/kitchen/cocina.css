@@ -353,3 +353,83 @@
   flex-wrap: wrap;
   margin-top: 1.5rem;
 }
+
+.badge-ready {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.platillos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.platillo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.88rem;
+}
+
+.platillo-info-left {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.platillo-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: #f1f5f9;
+  color: #94a3b8;
+  border: 1px solid #cbd5e1;
+}
+
+.platillo-check.done {
+  background: #064e3b;
+  color: #ffffff;
+  border-color: #064e3b;
+}
+
+.platillo-status {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.progress-section {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.45rem;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #059669;
+  transition: width 0.25s ease;
+}
