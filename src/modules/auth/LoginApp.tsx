@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 
+export type LoginRole = 'MANAGER' | 'WAITER' | 'CUSTOMER' | 'KITCHEN';
+
 interface LoginAppProps {
-  onLoginSuccess: (role?: 'MANAGER' | 'WAITER' | 'CUSTOMER') => void;
+  onLoginSuccess: (role?: LoginRole) => void;
 }
 
 export function LoginApp({ onLoginSuccess }: LoginAppProps) {
@@ -21,7 +23,7 @@ export function LoginApp({ onLoginSuccess }: LoginAppProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', 
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -29,12 +31,26 @@ export function LoginApp({ onLoginSuccess }: LoginAppProps) {
         throw new Error('Credenciales inválidas o error en el servidor.');
       }
 
-      let role: 'MANAGER' | 'WAITER' | 'CUSTOMER' = 'MANAGER';
-      const lowerEmail = email.toLowerCase();
-      if (lowerEmail.includes('waiter') || lowerEmail.includes('mesero')) {
-        role = 'WAITER';
-      } else if (lowerEmail.includes('customer') || lowerEmail.includes('cliente')) {
-        role = 'CUSTOMER';
+      const data = await response.json().catch(() => ({}));
+      const backendRole = typeof data?.role === 'string' ? data.role.toUpperCase() : '';
+
+      let role: LoginRole = 'MANAGER';
+      if (
+        backendRole === 'KITCHEN' ||
+        backendRole === 'WAITER' ||
+        backendRole === 'CUSTOMER' ||
+        backendRole === 'MANAGER'
+      ) {
+        role = backendRole;
+      } else {
+        const lowerEmail = email.toLowerCase();
+        if (lowerEmail.includes('kitchen') || lowerEmail.includes('cocina')) {
+          role = 'KITCHEN';
+        } else if (lowerEmail.includes('waiter') || lowerEmail.includes('mesero')) {
+          role = 'WAITER';
+        } else if (lowerEmail.includes('customer') || lowerEmail.includes('cliente')) {
+          role = 'CUSTOMER';
+        }
       }
 
       onLoginSuccess(role);
@@ -49,35 +65,35 @@ export function LoginApp({ onLoginSuccess }: LoginAppProps) {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f172a', color: '#fff' }}>
       <form onSubmit={handleLogin} style={{ background: '#1e293b', padding: '2rem', borderRadius: '8px', width: '350px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
         <h2 style={{ marginBottom: '1.5rem', textAlign: 'center', color: '#34d399' }}>Pasta la Vista - Login</h2>
-        
+
         {error && <div style={{ background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.85rem' }}>{error}</div>}
 
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Correo electrónico:</label>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
             style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }}
-            placeholder="ej. manager-c852796f82f5@bistro.local"
+            placeholder="correo@electronico"
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Contraseña:</label>
-          <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
             style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }}
             placeholder="••••••••••••"
           />
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={loading}
           style={{ width: '100%', padding: '0.75rem', background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
         >

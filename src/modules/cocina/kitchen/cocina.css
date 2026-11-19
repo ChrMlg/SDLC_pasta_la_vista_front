@@ -15,10 +15,45 @@
   align-items: center;
 }
 
+.breadcrumb {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.branch-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #047857;
+  background: #ecfdf5;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #a7f3d0;
+}
+
 .cocina-content {
   padding: 2rem;
   max-width: 1100px;
   margin: 0 auto;
+}
+
+.cocina-content h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+  color: #0f172a;
+}
+
+.subtitle-desc {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.catalog-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #047857;
 }
 
 .card-cocina-panel {
@@ -26,20 +61,22 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .live-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid #f1f5f9;
   padding-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .connection-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
@@ -51,6 +88,12 @@
   border: 1px solid #a7f3d0;
 }
 
+.connection-pill.disconnected {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
 .connection-dot {
   width: 8px;
   height: 8px;
@@ -58,9 +101,15 @@
   border-radius: 50%;
 }
 
+.connection-pill.disconnected .connection-dot {
+  background-color: #ef4444;
+}
+
 .sync-time {
   font-size: 0.8rem;
   color: #64748b;
+  display: block;
+  margin-top: 0.25rem;
 }
 
 .kitchen-columns-grid {
@@ -68,6 +117,12 @@
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
   margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .kitchen-columns-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .kitchen-column {
@@ -86,6 +141,79 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.pill-count {
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+}
+
+.comanda-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.comanda-card:hover {
+  border-color: #10b981;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.comanda-card.overdue {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.comanda-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.comanda-origin {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.comanda-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.comanda-card.overdue .comanda-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.comanda-items-list {
+  margin: 0.4rem 0 0.6rem;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: #334155;
+}
+
+.comanda-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  color: #64748b;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 0.5rem;
 }
 
 .empty-column-state {

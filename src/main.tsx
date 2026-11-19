@@ -7,8 +7,9 @@ import { ConfirmarDisponibilidad } from './modules/gerente/menu/ConfirmarDisponi
 import { MeseroNuevoPedidoApp } from './modules/mesero/order/MeseroNuevoPedidoApp';
 import { ClientePedidoApp } from './modules/cliente/order/ClientePedidoApp';
 import { ClienteMenuApp } from './modules/cliente/menu/ClienteMenuApp';
+import { ComandasCocinaApp } from './modules/cocina/kitchen/ComandasCocinaApp';
 
-type UserRole = 'MANAGER' | 'WAITER' | 'CUSTOMER' | null;
+type UserRole = 'MANAGER' | 'WAITER' | 'CUSTOMER' | 'KITCHEN' | null;
 
 function MainTest() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,10 +17,13 @@ function MainTest() {
   const [currentPath, setCurrentPath] = useState('/management/menu');
   const [availabilityParams, setAvailabilityParams] = useState<any>(null);
   const [orderReviewData, setOrderReviewData] = useState<any>(null);
+  const [selectedComandaId, setSelectedComandaId] = useState<string | null>(null);
 
   const handleNavigate = (path: string, params?: any) => {
     if (path.includes('/review') && params) {
       setOrderReviewData(params);
+    } else if (path.includes('/kitchen') && typeof params === 'string') {
+      setSelectedComandaId(params);
     } else if (params) {
       setAvailabilityParams(params);
     }
@@ -38,6 +42,8 @@ function MainTest() {
             setCurrentPath('/waiter/orders/new');
           } else if (role === 'CUSTOMER') {
             setCurrentPath('/branches/menu');
+          } else if (role === 'KITCHEN') {
+            setCurrentPath('/kitchen');
           } else {
             setCurrentPath('/management/menu');
           }
@@ -136,6 +142,34 @@ function MainTest() {
                 }}
               >
                 ← Volver al menú
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {userRole === 'KITCHEN' && (
+        <>
+          {currentPath === '/kitchen' && <ComandasCocinaApp onNavigate={handleNavigate} />}
+
+          {currentPath === '/kitchen/detail' && (
+            <div style={{ padding: '2rem', color: '#fff', background: '#0f172a', minHeight: '100vh' }}>
+              <h2>Detalle de comanda (H7)</h2>
+              <p>Comanda seleccionada: {selectedComandaId || 'Ninguna'}</p>
+              <button
+                type="button"
+                onClick={() => setCurrentPath('/kitchen')}
+                style={{
+                  background: '#059669',
+                  color: '#fff',
+                  padding: '0.5rem 1rem',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  marginTop: '1rem',
+                }}
+              >
+                ← Volver a comandas
               </button>
             </div>
           )}
