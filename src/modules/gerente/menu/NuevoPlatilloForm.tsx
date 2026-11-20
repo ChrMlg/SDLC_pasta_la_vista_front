@@ -1,35 +1,46 @@
 import React, { useState } from 'react';
+import { BRANCHES, DEFAULT_BRANCH_ID } from '../../../shared/api-client';
 import { createMenuItem } from './gerente-menu-api';
 import './gerente-menu.css';
 
-const CENTRO_BRANCH_ID = 'uuid-sucursal-centro-aqui';
+interface NuevoPlatilloProps {
+  onNavigate: (path: string) => void;
+  defaultBranchId?: string | null;
+}
 
-export function NuevoPlatilloForm({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function NuevoPlatilloForm({ onNavigate, defaultBranchId }: NuevoPlatilloProps) {
+  const [branchId, setBranchId] = useState(defaultBranchId || DEFAULT_BRANCH_ID);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('MAIN_COURSE');
   const [price, setPrice] = useState('');
-  const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSubmitting(true);
+    const numericPrice = parseFloat(price.replace(',', '.'));
+    if (!name.trim()) {
+      setError('El nombre del platillo es obligatorio.');
+      return;
+    }
+    if (isNaN(numericPrice) || numericPrice <= 0) {
+      setError('El precio debe ser un número mayor a 0.');
+      return;
+    }
 
     try {
-      await createMenuItem(CENTRO_BRANCH_ID, {
+      setSubmitting(true);
+      setError('');
+      await createMenuItem(branchId, {
         name,
-        description: description.trim() || undefined,
+        description,
         category,
-        price,
+        price: numericPrice,
       });
-
-      alert('Platillo registrado con éxito');
       onNavigate('/management/menu');
     } catch (err: any) {
-      // Manejo de errores devueltos por el backend (ej. 409 duplicado, 400 validación)
-      setError(err.message || 'No se pudo guardar el platillo en el servidor.');
+      setError(err.message || 'No se pudo registrar el platillo.');
     } finally {
       setSubmitting(false);
     }
@@ -37,55 +48,60 @@ export function NuevoPlatilloForm({ onNavigate }: { onNavigate: (path: string) =
 
   return (
     <div className="gerente-container">
-      <header className="gerente-header">
-        <div className="gerente-breadcrumb">Gerente de sucursal / <strong>Registrar platillo</strong></div>
-        <div className="gerente-branch-badge">Centro - Conectado al Back</div>
+      <header className="gerente-header-bar">
+        <div className="breadcrumb">
+        </div>
       </header>
 
       <main className="gerente-content">
         <div className="meta-info">
-          <span className="badge-h">H1 · MANAGER</span>
-          <span className="route-tag">/management/menu/new</span>
+
         </div>
-        
-        <h1>Registrar platillo</h1>
-        <p className="subtitle-desc">El servidor validará las restricciones de nombre único y formato.</p>
 
-        <div className="card-catalog">
-          <div className="catalog-header-text">
-            <span className="catalog-tag">MENÚ · CENTRO</span>
-            <h2>Nuevo platillo</h2>
-          </div>
+        <h1>Registrar nuevo platillo</h1>
+        <p className="subtitle-desc">
+          El platillo se creará activo (disponible) en la sucursal seleccionada.
+        </p>
 
-          {error && <div className="alert-error">{error}</div>}
+        <div className="card-menu-panel" style={{ maxWidth: '640px' }}>
+          {error && <div className="alert-error-box">{error}</div>}
 
-          <form onSubmit={handleSubmit} className="dish-form">
-            <div className="form-group">
-              <label>Nombre · 2–80 caracteres</label>
-              <input 
-                type="text" 
-                placeholder="Ej. Pollo al horno" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)}
-                maxLength={80}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="form-group-menu">
+              <label>Sucursal</label>
+              <select value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+                {BRANCHES.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group-menu">
+              <label>Nombre del platillo *</label>
+              <input
+                type="text"
                 required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej. Fettuccine Alfredo"
               />
             </div>
 
-            <div className="form-group">
-              <label>Descripción · máx. 300</label>
-              <textarea 
-                placeholder="Descripción opcional" 
+            <div className="form-group-menu">
+              <label>Descripción (opcional)</label>
+              <textarea
+                rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                maxLength={300}
-                rows={3}
+                placeholder="Ingredientes o notas del platillo..."
               />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Categoría</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="form-group-menu">
+                <label>Categoría *</label>
                 <select value={category} onChange={(e) => setCategory(e.target.value)}>
                   <option value="STARTER">Entrada</option>
                   <option value="MAIN_COURSE">Plato fuerte</option>
@@ -94,22 +110,23 @@ export function NuevoPlatilloForm({ onNavigate }: { onNavigate: (path: string) =
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Precio USD · 0.01–99,999.99</label>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  placeholder="12.50" 
+              <div className="form-group-menu">
+                <label>Precio ($) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  required
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  required
+                  placeholder="12.50"
                 />
               </div>
             </div>
 
-            <div className="form-actions">
-              <button 
-                type="button" 
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
+              <button
+                type="button"
                 className="btn-secondary"
                 onClick={() => onNavigate('/management/menu')}
                 disabled={submitting}

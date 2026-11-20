@@ -1,83 +1,164 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './cliente-menu.css';
 
-interface DishItem {
+interface MenuItem {
   id: string;
   name: string;
+  description?: string | null;
   category: string;
-  price: string;
+  price: number | string;
   isAvailable: boolean;
 }
 
-export function ClienteMenuApp({ onNavigate }: { onNavigate: (path: string) => void }) {
+const BRANCH_MAP: Record<string, string> = {
+  Centro: 'a1111111-1111-4111-8111-111111111111',
+  Bambú: 'a2222222-2222-4222-8222-222222222222',
+  Ramblas: 'a3333333-3333-4333-8333-333333333333',
+};
+
+export function ClienteMenuApp({ onNavigate }: { onNavigate?: (path: string) => void }) {
   const [selectedBranch, setSelectedBranch] = useState('Centro');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
-  const [activeTab, setActiveTab] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
-  const [cartCount, setCartCount] = useState(1);
-  const [cartTotal, setCartTotal] = useState(6.50);
 
-  const dishes: DishItem[] = [
-    { id: '1', name: 'Pasta al pesto', category: 'Plato fuerte', price: '12.50', isAvailable: true },
-    { id: '2', name: 'Bruschettas', category: 'Entrada', price: '6.50', isAvailable: true },
-    { id: '3', name: 'Tarta de limón', category: 'Postre', price: '6.00', isAvailable: true },
-    { id: '4', name: 'Limonada natural', category: 'Bebida', price: '5.00', isAvailable: true },
-    { id: '5', name: 'Pollo al horno', category: 'Plato fuerte', price: '13.25', isAvailable: true },
-    { id: '6', name: 'Ensalada fresca', category: 'Entrada', price: '7.25', isAvailable: true },
-    { id: '7', name: 'Flan casero', category: 'Postre', price: '4.50', isAvailable: true },
-    { id: '8', name: 'Café de la casa', category: 'Bebida', price: '2.75', isAvailable: true },
-  ];
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const filteredDishes = dishes.filter(dish => {
-    const matchesSearch = dish.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCatDropdown = selectedCategory === 'Todas' || dish.category === selectedCategory;
-    const matchesTab = activeTab === 'Todos' || dish.category.toLowerCase() === activeTab.toLowerCase() || (activeTab === 'Platos fuertes' && dish.category === 'Plato fuerte');
-    return matchesSearch && matchesCatDropdown && matchesTab;
-  });
+  useEffect(() => {
+    loadMenu();
+  }, [selectedBranch]);
 
-  const handleAddToCart = (dish: DishItem) => {
-    setCartCount(prev => prev + 1);
-    setCartTotal(prev => prev + parseFloat(dish.price));
+  const loadMenu = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
+
+      let allDishes: MenuItem[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      while (currentPage <= totalPages) {
+        const response = await fetch(`/api/branches/${branchId}/menu?page=${currentPage}`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener el menú del servidor');
+        }
+
+        const data = await response.json();
+        const pageList: MenuItem[] = Array.isArray(data) ? data : (data.data || []);
+
+        if (pageList.length === 0) {
+          break;
+        }
+
+        const uniqueNew = pageList.filter(
+          (newDish) => !allDishes.some((existing) => existing.id === newDish.id)
+        );
+        allDishes = [...allDishes, ...uniqueNew];
+
+        if (!Array.isArray(data) && typeof data.total === 'number' && typeof data.pageSize === 'number' && data.pageSize > 0) {
+          totalPages = Math.ceil(data.total / data.pageSize);
+        } else {
+          break;
+        }
+
+        currentPage++;
+        if (currentPage > 25) break;
+      }
+
+      setItems(allDishes);
+    } catch {
+      setError('No se pudo conectar con el servidor para cargar el menú.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const getCategoryLabel = (cat: string) => {
+    const map: Record<string, string> = {
+      STARTER: 'Entrada',
+      MAIN_COURSE: 'Plato fuerte',
+      DRINK: 'Bebida',
+      DESSERT: 'Postre',
+    };
+    return map[cat] || cat;
+  };
+
+  const filteredDishes = items.filter((dish) => {
+    const matchesSearch = dish.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const categoryLabel = getCategoryLabel(dish.category);
+    const matchesCategory = selectedCategory === 'Todas' || categoryLabel === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="cliente-container">
       <header className="cliente-header-bar">
         <span className="prototype-title">Menú digital por sucursal</span>
-        <span className="prototype-subtitle">Pantalla individual · Prototipo para diseñar y programar el sitio web</span>
+        <span className="prototype-subtitle">{selectedBranch} · Conectado al Back</span>
       </header>
 
       <main className="cliente-content">
         <div className="meta-info">
-          <span className="badge-h">H3 · CUSTOMER / WAITER</span>
+          <span className="badge-h">H3 · CUSTOMER</span>
           <span className="route-tag">/branches/:branchId/menu</span>
         </div>
 
         <div className="card-menu-catalog">
-          <div className="catalog-header-text">
-            <span className="catalog-tag">SABORES DE LA CASA</span>
-            <h2>Descubre nuestro menú</h2>
-            <p>Selecciona sucursal, busca platillos y consulta sus reseñas.</p>
+          <div className="catalog-header-text" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+            <div>
+              <span className="catalog-tag">SABORES DE LA CASA</span>
+              <h2>Descubre nuestro menú</h2>
+              <p>Consulta los platillos y su disponibilidad actual por sucursal.</p>
+            </div>
+            <button
+              type="button"
+              onClick={loadMenu}
+              style={{
+                background: '#334155',
+                color: '#fff',
+                border: 'none',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+              }}
+            >
+              Actualizar menú
+            </button>
           </div>
 
-          {/* Filtros superiores: Sucursal y Categoría */}
+          {error && (
+            <div
+              className="alert-error"
+              style={{ background: '#ef4444', color: '#fff', padding: '0.6rem', borderRadius: '6px', marginBottom: '1rem' }}
+            >
+              {error}
+            </div>
+          )}
+
           <div className="filters-grid">
             <div className="filter-group">
               <label>Sucursal</label>
-              <select 
-                value={selectedBranch} 
+              <select
+                value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
               >
                 <option value="Centro">Centro</option>
-                <option value="Bambu">Bambu</option>
+                <option value="Bambú">Bambú</option>
                 <option value="Ramblas">Ramblas</option>
               </select>
             </div>
 
             <div className="filter-group">
               <label>Categoría</label>
-              <select 
-                value={selectedCategory} 
+              <select
+                value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
                 <option value="Todas">Todas</option>
@@ -90,81 +171,72 @@ export function ClienteMenuApp({ onNavigate }: { onNavigate: (path: string) => v
           </div>
 
           <div className="filter-group search-group">
-            <label>Buscar por nombre</label>
-            <input 
-              type="text" 
-              placeholder="Buscar platillo..." 
+            <label>Buscar por nombre ({filteredDishes.length} platillos)</label>
+            <input
+              type="text"
+              placeholder="Buscar platillo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          {/* Pestañas de categorías */}
-          <div className="category-tabs">
-            {['Todos', 'Entradas', 'Platos fuertes', 'Postres'].map(tab => (
-              <button 
-                key={tab} 
-                className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Listado de platillos */}
           <div className="dishes-list">
-            {filteredDishes.length === 0 ? (
-              <div className="empty-state">No hay platillos para esta búsqueda.</div>
+            {loading ? (
+              <div className="empty-state">Cargando menú del servidor...</div>
+            ) : filteredDishes.length === 0 ? (
+              <div className="empty-state">No hay platillos para esta selección.</div>
             ) : (
-              filteredDishes.map(dish => (
+              filteredDishes.map((dish) => (
                 <div key={dish.id} className="dish-row-card">
                   <div className="dish-info">
-                    <div className="dish-indicator-dot"></div>
+                    <div
+                      className="dish-indicator-dot"
+                      style={{ background: dish.isAvailable ? '#059669' : '#ef4444' }}
+                    />
                     <div>
                       <h4 className="dish-name">{dish.name}</h4>
-                      <span className="dish-category-label">{dish.category}</span>
+                      <span className="dish-category-label">
+                        {getCategoryLabel(dish.category)} ·{' '}
+                        <strong style={{ color: dish.isAvailable ? '#059669' : '#ef4444' }}>
+                          {dish.isAvailable ? 'Disponible' : 'No disponible'}
+                        </strong>
+                      </span>
+                      {dish.description && (
+                        <p className="dish-desc" style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                          {dish.description}
+                        </p>
+                      )}
                     </div>
                   </div>
+
                   <div className="dish-action-area">
-                    <span className="dish-price">${dish.price}</span>
-                    <button 
-                      className={`btn-add ${!dish.isAvailable ? 'disabled' : ''}`}
-                      onClick={() => dish.isAvailable && handleAddToCart(dish)}
-                      disabled={!dish.isAvailable}
-                    >
-                      {dish.isAvailable ? '+ Añadir' : 'No disponible'}
-                    </button>
+                    <span className="dish-price">${Number(dish.price).toFixed(2)}</span>
                   </div>
                 </div>
               ))
             )}
           </div>
+        </div>
 
-          {/* Footer de la tarjeta con contador y enlace a reseñas */}
-          <div className="catalog-footer-actions">
-            <span className="counter-badge">{filteredDishes.length} platillo(s) · muestra</span>
-            <button 
-              className="btn-link-reviews"
-              onClick={() => alert('Navegando a reseñas de la sucursal')}
+        {onNavigate && (
+          <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => onNavigate('/orders/new')}
+              style={{
+                background: '#059669',
+                color: '#fff',
+                padding: '0.6rem 1.1rem',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
             >
-              Ver reseñas de la sucursal
+              Ir a pedir →
             </button>
           </div>
-        </div>
-
-        {/* Barra flotante inferior de carrito */}
-        <div className="cart-bottom-bar">
-          <div className="cart-summary-text">
-            <strong>Carrito</strong> · {cartCount} artículos · ${cartTotal.toFixed(2)}
-          </div>
-          <button 
-            className="btn-primary-green"
-            onClick={() => onNavigate('/checkout')}
-          >
-            Ver pedido →
-          </button>
-        </div>
+        )}
       </main>
     </div>
   );
