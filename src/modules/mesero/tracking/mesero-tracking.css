@@ -1,5 +1,4 @@
 .mesero-track-container {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #1a2e22;
   background-color: #f8fafc;
   min-height: 100vh;
@@ -13,64 +12,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.breadcrumb {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.branch-badge {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #047857;
-  background: #ecfdf5;
-  padding: 0.3rem 0.8rem;
-  border-radius: 999px;
-  border: 1px solid #a7f3d0;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .mesero-track-content {
   padding: 2rem;
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
-.meta-info {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.badge-h {
-  background: #fef3c7;
-  color: #92400e;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
-}
-
-.route-tag {
-  background: #f1f5f9;
-  color: #475569;
-  font-family: monospace;
-  font-size: 0.7rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
-}
-
 .mesero-track-content h1 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 0.25rem 0;
+  margin: 0.25rem 0 0;
+  font-size: 1.75rem;
   color: #0f172a;
-}
-
-.subtitle-desc {
-  color: #64748b;
-  font-size: 0.875rem;
-  margin-bottom: 1.5rem;
 }
 
 .card-track-panel {
@@ -78,233 +33,142 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 2rem;
+  margin-top: 1.25rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.catalog-tag {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: #047857;
-}
-
-.catalog-header-text h2 {
-  font-size: 1.4rem;
-  margin: 0.25rem 0;
-  color: #0f172a;
-}
-
-.catalog-header-text p {
-  color: #64748b;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-}
-
-/* Pestañas de estado (Todos, Preparación, Listos, Entrega) */
-.track-tabs-bar {
+.track-tabs-row {
   display: flex;
-  background: #f1f5f9;
-  padding: 0.3rem;
-  border-radius: 8px;
-  gap: 0.3rem;
-  margin-bottom: 1.5rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1.25rem 0;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.85rem;
 }
 
 .track-tab-btn {
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: 0.6rem;
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: #64748b;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  padding: 0.4rem 0.85rem;
   border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .track-tab-btn.active {
-  background: #ffffff;
-  color: #0f172a;
-  font-weight: 700;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: #064e3b;
+  color: #ffffff;
+  border-color: #064e3b;
 }
 
-/* Estado vacío y tarjetas de pedidos */
 .empty-orders-box {
   text-align: center;
-  padding: 2.5rem 1.5rem;
-  background: #fafaf9;
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
+  padding: 2.5rem 1.25rem;
   color: #64748b;
   font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-}
-
-.orders-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
 }
 
 .order-track-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1rem 1.15rem;
+  margin-bottom: 0.9rem;
 }
 
-.order-card-top {
+.order-track-top,
+.order-track-bottom,
+.step-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.35rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
-.order-card-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.order-card-meta {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin-bottom: 1rem;
-}
-
-/* Badges de estado */
 .status-pill {
-  display: inline-block;
-  padding: 0.2rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
 }
 
 .status-pill.ready {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.status-pill.prep {
-  background: #fef3c7;
-  color: #92400e;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
 .status-pill.delivery {
-  background: #dbeafe;
-  color: #1e40af;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
 }
 
-/* Aviso inferior */
-.track-notice-box {
-  background: #f4f7f5;
-  border: 1px solid #e2e8f0;
-  padding: 0.85rem 1rem;
-  font-size: 0.84rem;
-  color: #475569;
-  border-radius: 8px;
-}
-
-/* Vista 2: Pasos de Recogida y Entrega */
 .alert-rule-banner {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-  padding: 0.85rem 1rem;
-  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 3px solid #f59e0b;
+  color: #92400e;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
   font-size: 0.85rem;
-  margin-bottom: 1.25rem;
+  margin: 1rem 0 1.25rem;
 }
 
 .delivery-steps-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
+  gap: 0.85rem;
 }
 
 .delivery-step-card {
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 1.25rem 1.5rem;
+  border-radius: 8px;
+  padding: 1rem 1.15rem;
   background: #ffffff;
 }
 
 .delivery-step-card.step-done {
-  background: #f4f8f5;
-  border-color: #d1fae5;
-}
-
-.step-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.35rem;
+  border-color: #a7f3d0;
+  background: #f0fdf4;
 }
 
 .step-card-title {
-  font-size: 0.98rem;
   font-weight: 700;
   color: #0f172a;
+  font-size: 0.95rem;
 }
 
 .step-card-desc {
+  margin: 0.35rem 0 0;
+  color: #475569;
   font-size: 0.85rem;
-  color: #64748b;
-  margin: 0;
 }
 
 .step-action-row {
-  margin-top: 1rem;
-}
-
-.btn-primary-green {
-  background: #064e3b;
-  color: #ffffff;
-  border: none;
-  padding: 0.65rem 1.25rem;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.2s;
-}
-
-.btn-primary-green:hover:not(:disabled) {
-  background: #022c22;
-}
-
-.btn-primary-green:disabled {
-  background: #94a3b8;
-  cursor: not-allowed;
-}
-
-.btn-full {
-  width: 100%;
-}
-
-.btn-secondary {
-  background: #ffffff;
-  color: #334155;
-  border: 1px solid #cbd5e1;
-  padding: 0.6rem 1.1rem;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  font-size: 0.88rem;
-}
-
-.btn-secondary:hover {
-  background: #f8fafc;
+  margin-top: 0.75rem;
 }
 
 .footer-rule-text {
-  font-size: 0.8rem;
+  margin-top: 1.25rem;
+  font-size: 0.82rem;
   color: #64748b;
-  margin-top: 0.75rem;
+}
+
+.track-footer-actions {
+  margin-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
