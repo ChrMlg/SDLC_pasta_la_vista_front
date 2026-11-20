@@ -1,340 +1,210 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import './cocina.css';
+import React, { useState, useEffect } from 'react';
+import { DEFAULT_BRANCH_ID } from '../../../shared/api-client';
+import {
+  fetchKitchenOrders,
+  KitchenOrder,
+  releaseKitchenOrder,
+  takeKitchenOrder,
+} from './cocina-api';
+import '../cocina.css';
 
 interface DetalleComandaProps {
-  onNavigate: (path: string, comandaId?: string) => void;
-  comandaId?: string;
   branchId?: string;
-}
-
-interface ComandaDetalleData {
-  id: string;
-  status: string;
-  takenBy: string;
-  readyCount: number;
-  pendingItemsCount: number;
-  items: Array<{
-    id?: string;
-    name: string;
-    quantity?: number;
-    isReady?: boolean;
-  }>;
+  orderId?: string;
+  initialOrder?: KitchenOrder | null;
+  onNavigate: (path: string, params?: any) => void;
 }
 
 export function DetalleComandaApp({
+  branchId = DEFAULT_BRANCH_ID,
+  orderId,
+  initialOrder,
   onNavigate,
-  comandaId,
-  branchId = 'a1111111-1111-4111-8111-111111111111',
 }: DetalleComandaProps) {
-  const [comanda, setComanda] = useState<ComandaDetalleData>({
-    id: comandaId || '',
-    status: 'PENDING',
-    takenBy: 'Sin asignar',
-    readyCount: 0,
-    pendingItemsCount: 0,
-    items: [],
-  });
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
+  const [order, setOrder] = useState<KitchenOrder | null>(initialOrder || null);
+  const [loading, setLoading] = useState(!initialOrder);
+  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
 
-  const loadComandaDetail = useCallback(async () => {
-    if (!comandaId) return;
+  const loadOrderDetail = async () => {
     try {
       setLoading(true);
       setError('');
-
-      const res = await fetch(`/api/branches/${branchId}/kitchen/orders`, {
-        method: 'GET',
-        credentials: 'include',
-        cache: 'no-store',
-      });
-
-      if (!res.ok) return;
-
-      const payload = await res.json();
-      const list: any[] = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.data)
-        ? payload.data
-        : Array.isArray(payload?.orders)
-        ? payload.orders
-        : [];
-
-      const found = list.find((o) => String(o?.id ?? o?.orderId ?? '') === String(comandaId));
-      if (!found) return;
-
-      const rawItems: any[] = Array.isArray(found.items) ? found.items : [];
-      const normalizedItems = rawItems.map((it) => ({
-        id: it?.id ?? it?.itemId,
-        name: it?.name || it?.dishName || it?.menuItem?.name || 'Platillo',
-        quantity: it?.quantity,
-        isReady: Boolean(it?.isReady ?? it?.ready ?? it?.status === 'READY'),
-      }));
-
-      const readyCount = normalizedItems.filter((i) => i.isReady).length;
-      const pendingItemsCount = normalizedItems.filter((i) => !i.isReady).length;
-
-      const cookRaw = found.assignedCook ?? found.takenBy ?? found.cook;
-      const takenBy =
-        typeof cookRaw === 'string' && cookRaw.trim()
-          ? cookRaw
-          : cookRaw?.name || cookRaw?.email || 'Sin asignar';
-
-      setComanda({
-        id: String(found.id ?? found.orderId ?? comandaId),
-        status: String(found.status ?? found.state ?? 'PENDING').toUpperCase(),
-        takenBy,
-        readyCount,
-        pendingItemsCount,
-        items: normalizedItems,
-      });
-    } catch {
-      // Mantiene el estado actual si la consulta auxiliar falla
+      const all = await fetchKitchenOrders(branchId);
+      const found = orderId
+        ? all.find((o) => o.orderId === orderId) || all[0] || null
+        : all[0] || null;
+      setOrder(found);
+    } catch (err: any) {
+      setError(err.message || 'No se pudo cargar el detalle de la comanda.');
     } finally {
       setLoading(false);
     }
-  }, [branchId, comandaId]);
+  };
 
   useEffect(() => {
-    loadComandaDetail();
-  }, [loadComandaDetail]);
-
-  const handlePrepare = async () => {
-    if (!comandaId) {
-      setError('No se recibió el ID de la comanda.');
-      return;
+    if (!initialOrder || orderId) {
+      loadOrderDetail();
     }
+  }, [branchId, orderId]);
 
+  const handleTakeOrder = async () => {
+    if (!order) return;
     try {
-      setSubmitting(true);
+      setProcessing(true);
       setError('');
-      setMessage('');
-
-      const res = await fetch(`/api/branches/${branchId}/kitchen/orders/${comandaId}/take`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        cache: 'no-store',
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(
-          errBody?.message ||
-            (res.status === 409
-              ? 'Otro cocinero ya tomó esta comanda. Actualizando...'
-              : `No se pudo tomar la comanda (${res.status}).`)
-        );
-      }
-
-      setComanda((prev) => ({ ...prev, status: 'IN_PREPARATION' }));
-      setMessage('Comanda marcada como en preparación.');
-      await loadComandaDetail();
+      await takeKitchenOrder(branchId, order.orderId);
+      onNavigate('/kitchen/items', { branchId, orderId: order.orderId });
     } catch (err: any) {
-      setError(err?.message || 'Error al tomar la comanda.');
-      await loadComandaDetail();
+      setError(err.message || 'No se pudo tomar la comanda.');
     } finally {
-      setSubmitting(false);
+      setProcessing(false);
     }
   };
 
-  const handleRelease = async () => {
-    if (!comandaId) {
-      setError('No se recibió el ID de la comanda.');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      '¿Liberar comanda a pendientes? Requiere confirmación y únicamente es posible si todavía no hay platillos listos.'
-    );
-    if (!confirmed) return;
-
+  const handleReleaseOrder = async () => {
+    if (!order) return;
     try {
-      setSubmitting(true);
+      setProcessing(true);
       setError('');
-      setMessage('');
-
-      const res = await fetch(`/api/branches/${branchId}/kitchen/orders/${comandaId}/release`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        cache: 'no-store',
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(
-          errBody?.message || `No se pudo liberar la comanda (${res.status}). Verifica si ya hay platillos listos.`
-        );
-      }
-
-      setComanda((prev) => ({ ...prev, status: 'PENDING', takenBy: 'Sin asignar' }));
+      await releaseKitchenOrder(branchId, order.orderId);
       onNavigate('/kitchen');
     } catch (err: any) {
-      setError(err?.message || 'Error al liberar la comanda.');
-      await loadComandaDetail();
+      setError(err.message || 'No se pudo liberar la comanda.');
     } finally {
-      setSubmitting(false);
+      setProcessing(false);
     }
   };
+
+  const readyCount = order ? order.items.filter((i) => i.isReady).length : 0;
+  const pendingCount = order ? order.items.length - readyCount : 0;
 
   return (
     <div className="cocina-container">
       <header className="cocina-header-bar">
         <div className="breadcrumb">
-          Cocina / <strong>Tomar o liberar una comanda</strong>
+          Cocina / <strong>Tomar o liberar comanda</strong>
         </div>
-        <div className="branch-badge">Cocina · H7</div>
       </header>
 
-      <main className="cocina-content">
-        <h1>Tomar o liberar una comanda</h1>
-        <p className="subtitle-desc">H7 · Gestión de asignación de comanda en cocina.</p>
+      <main className="cocina-content" style={{ maxWidth: '760px' }}>
+        <div className="meta-info">
 
-        {error && <div className="kitchen-notice-box kitchen-notice-warning">{error}</div>}
-        {message && (
-          <div className="kitchen-notice-box" style={{ borderLeftColor: '#10b981', color: '#065f46', marginBottom: '1rem' }}>
-            {message}
-          </div>
-        )}
+        </div>
+
+        <h1>Detalle de comanda</h1>
+        <p className="subtitle-desc">
+          Asigna la comanda a preparación o libérala nuevamente a pendientes.
+        </p>
 
         <div className="card-cocina-panel">
-          <div className="live-header-row">
-            <div>
-              <span className="catalog-tag">PEDIDO ACTIVO</span>
-              <h2 style={{ margin: '0.2rem 0' }}>Gestión de comanda</h2>
-              <p style={{ color: '#64748b', fontSize: '0.85rem', margin: 0 }}>
-                Solo una persona puede tomar la comanda a la vez.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={loadComandaDetail}
-              disabled={loading || submitting}
-              style={{
-                background: '#334155',
-                color: '#fff',
-                border: 'none',
-                padding: '0.35rem 0.75rem',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-              }}
-            >
-              {loading ? 'Cargando...' : 'Refrescar'}
-            </button>
-          </div>
+          {error && <div className="alert-error-box">{error}</div>}
 
-          <div
-            style={{
-              background: '#fafaf9',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              padding: '1.25rem',
-              margin: '1.5rem 0',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid #e2e8f0',
-                paddingBottom: '0.75rem',
-                marginBottom: '0.75rem',
-              }}
-            >
-              <strong>Comanda {comanda.id ? `#${comanda.id.slice(0, 8)}` : ''}</strong>
-              <span className="comanda-badge">{comanda.status}</span>
+          {loading ? (
+            <div className="empty-column-state">Cargando información de la comanda...</div>
+          ) : !order ? (
+            <div className="empty-column-state">
+              No hay una comanda seleccionada actualmente.
+              <div style={{ marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => onNavigate('/kitchen')}
+                >
+                  ← Volver a comandas
+                </button>
+              </div>
             </div>
+          ) : (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                <div>
+                  <span className="catalog-tag">COMANDA OPERATIVA</span>
+                  <h2 style={{ margin: '0.2rem 0' }}>
+                    Pedido{' '}
+                    {order.orderNumber
+                      ? `#${order.orderNumber}`
+                      : `#${order.orderId.slice(0, 6).toUpperCase()}`}
+                  </h2>
+                  <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                    {readyCount} listos · {pendingCount} pendientes · Estado: {order.status}
+                  </span>
+                </div>
+                <span className="status-badge available">
+                  {order.type === 'TAKEAWAY'
+                    ? 'Para llevar'
+                    : order.tableNumber
+                    ? `Mesa ${order.tableNumber}`
+                    : 'En mesa'}
+                </span>
+              </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', color: '#475569', fontSize: '0.9rem' }}>
-              <span>Tomada por</span>
-              <strong style={{ color: '#0f172a' }}>{comanda.takenBy}</strong>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', color: '#475569', fontSize: '0.9rem' }}>
-              <span>Platillos listos / pendientes</span>
-              <strong style={{ color: '#0f172a' }}>
-                {comanda.readyCount} listos · {comanda.pendingItemsCount} pendientes
-              </strong>
-            </div>
-
-            {comanda.items.length > 0 && (
-              <ul className="comanda-items-list" style={{ marginTop: '0.75rem' }}>
-                {comanda.items.map((item, idx) => (
-                  <li key={item.id || `${item.name}-${idx}`}>
-                    {item.quantity ? `${item.quantity}x ` : ''}
-                    {item.name} {item.isReady ? '(Listo)' : ''}
-                  </li>
+              <div style={{ marginBottom: '1.5rem' }}>
+                {order.items.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`dish-checklist-row ${item.isReady ? 'is-ready' : ''}`}
+                  >
+                    <div>
+                      <strong>{item.name}</strong> ×{item.quantity}
+                      {item.notes && (
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          Nota: {item.notes}
+                        </div>
+                      )}
+                    </div>
+                    <span className={`status-badge ${item.isReady ? 'available' : 'unavailable'}`}>
+                      {item.isReady ? 'Listo' : 'Pendiente'}
+                    </span>
+                  </div>
                 ))}
-              </ul>
-            )}
-          </div>
+              </div>
 
-          <div className="kitchen-notice-box kitchen-notice-warning">
-            Liberar requiere confirmación y únicamente es posible si todavía no hay platillos listos.
-          </div>
-
-          <div className="kitchen-notice-box" style={{ marginBottom: '1.5rem' }}>
-            Si otro cocinero ya tomó la comanda, mostrar conflicto y actualizar la lista.
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                disabled={submitting || !comandaId}
-                onClick={handlePrepare}
-                style={{
-                  background: '#064e3b',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '0.65rem 1.15rem',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  cursor: submitting || !comandaId ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {submitting ? 'Procesando...' : 'Preparar comanda'}
-              </button>
-
-              <button
-                type="button"
-                disabled={submitting || !comandaId}
-                onClick={handleRelease}
-                style={{
-                  background: '#ffffff',
-                  color: '#334155',
-                  border: '1px solid #cbd5e1',
-                  padding: '0.65rem 1.15rem',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  cursor: submitting || !comandaId ? 'not-allowed' : 'pointer',
-                }}
-              >
-                Liberar a pendientes
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('/kitchen')}
-              style={{
-                background: '#ffffff',
-                color: '#334155',
-                border: '1px solid #cbd5e1',
-                padding: '0.65rem 1.15rem',
-                borderRadius: '6px',
-                fontWeight: 500,
-                cursor: 'pointer',
-              }}
-            >
-              ← Volver a comandas
-            </button>
-          </div>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => onNavigate('/kitchen')}
+                  disabled={processing}
+                >
+                  ← Volver a comandas
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary-green"
+                  onClick={handleTakeOrder}
+                  disabled={processing}
+                >
+                  {processing ? 'Procesando...' : 'Preparar comanda'}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() =>
+                    onNavigate('/kitchen/items', { branchId, orderId: order.orderId, order })
+                  }
+                  disabled={processing}
+                >
+                  Ir a platillos →
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleReleaseOrder}
+                  disabled={processing}
+                >
+                  Liberar a pendientes
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>
