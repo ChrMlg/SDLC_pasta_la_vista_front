@@ -1,4 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { BRANCHES, DEFAULT_BRANCH_ID } from '../../../shared/api-client';
+import {
+  fetchAllWaiterMenuItems,
+  fetchBranchTables,
+  createWaiterOrder,
+  BranchTableOption,
+} from './mesero-order-api';
 import './mesero-order.css';
 
 interface OrderItem {
@@ -10,16 +17,16 @@ interface OrderItem {
   quantity: number;
 }
 
-const BRANCH_MAP: Record<string, string> = {
-  Centro: 'a1111111-1111-4111-8111-111111111111',
-  Bambu: 'a2222222-2222-4222-8222-222222222222',
-  Ramblas: 'a3333333-3333-4333-8333-333333333333',
-};
+interface MeseroNuevoPedidoProps {
+  onNavigate: (path: string) => void;
+  defaultBranchId?: string | null;
+}
 
-export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string) => void }) {
-  const [selectedBranch, setSelectedBranch] = useState('Centro');
+export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuevoPedidoProps) {
+  const [branchId, setBranchId] = useState(defaultBranchId || DEFAULT_BRANCH_ID);
   const [serviceType, setServiceType] = useState<'DINE_IN' | 'TAKEAWAY'>('DINE_IN');
-  const [tableNumber, setTableNumber] = useState('Mesa 01');
+  const [tables, setTables] = useState<BranchTableOption[]>([]);
+  const [selectedTableId, setSelectedTableId] = useState('');
   const [activeTab, setActiveTab] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [specialNotes, setSpecialNotes] = useState('');
@@ -28,31 +35,50 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
-  useEffect(() => {
-    loadWaiterMenu();
-  }, [selectedBranch]);
+  const selectedBranchLabel =
+    BRANCHES.find((b) => b.id === branchId)?.label.toUpperCase() || 'SUCURSAL';
 
-  const loadWaiterMenu = async () => {
+  const loadWaiterBranchData = async () => {
     try {
       setLoading(true);
       setError('');
-      const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
-      
-      const response = await fetch(`/api/branches/${branchId}/menu`, {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Error al obtener el menú para el mesero');
-      const data = await response.json();
-      const list = Array.isArray(data) ? data : (data.data || []);
-      
-      setItems(list.map((item: any) => ({ ...item, quantity: 0 })));
-    } catch (err) {
-      setError('No se pudo conectar con el servidor para cargar el menú.');
+      setItems([]);
+      setTables([]);
+      setSelectedTableId('');
+
+      const [allMenuItems, branchTables] = await Promise.all([
+        fetchAllWaiterMenuItems(branchId),
+        fetchBranchTables(branchId).catch(() => []),
+      ]);
+
+      setItems(
+        allMenuItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          price: Number(item.price),
+          isAvailable: item.isAvailable,
+          quantity: 0,
+        }))
+      );
+
+      setTables(branchTables);
+      if (branchTables.length > 0) {
+        setSelectedTableId(branchTables[0].id);
+      }
+    } catch (err: any) {
+      setItems([]);
+      setError(err.message || 'No se pudo cargar el menú de la sucursal seleccionada.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadWaiterBranchData();
+  }, [branchId]);
 
   const getCategoryLabel = (cat: string) => {
     const map: Record<string, string> = {
@@ -65,8 +91,8 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
   };
 
   const handleQuantityChange = (id: string, delta: number) => {
-    setItems(prev =>
-      prev.map(item => {
+    setItems((prev) =>
+      prev.map((item) => {
         if (item.id === id && item.isAvailable) {
           const newQty = Math.max(0, item.quantity + delta);
           return { ...item, quantity: newQty };
@@ -76,7 +102,7 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
     );
   };
 
-  const filteredItems = items.filter(item => {
+  const filteredItems = items.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const categoryLabel = getCategoryLabel(item.category);
     const matchesTab =
@@ -93,46 +119,41 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
 
   const handleConfirmOrder = async () => {
     if (subtotal === 0) {
-      alert('Debes seleccionar al menos un platillo disponible para el pedido.');
+      setError('Debes seleccionar al menos un platillo disponible para el pedido.');
+      return;
+    }
+
+    if (serviceType === 'DINE_IN' && !selectedTableId) {
+      setError('Selecciona una mesa válida de la sucursal para pedidos en mesa.');
       return;
     }
 
     try {
       setSubmitting(true);
       setError('');
-      const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
+      setSuccessMsg('');
 
-      // items seleccionados para el payload del backend
       const orderItems = items
-        .filter(item => item.quantity > 0)
-        .map(item => ({
+        .filter((item) => item.quantity > 0)
+        .map((item) => ({
           menuItemId: item.id,
           quantity: item.quantity,
-          notes: specialNotes || undefined,
+          ...(specialNotes.trim() ? { notes: specialNotes.trim() } : {}),
         }));
 
-      const payload = {
+      await createWaiterOrder({
         branchId,
         serviceType,
-        tableNumber: serviceType === 'DINE_IN' ? tableNumber : null,
+        tableId: serviceType === 'DINE_IN' ? selectedTableId : null,
         items: orderItems,
-      };
-
-      // Petición POST al backend para registrar la orden (H4)
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Error al registrar el pedido en el servidor');
-      }
-
-      alert('¡Pedido registrado y enviado a cocina con éxito!');
-      onNavigate('/waiter/orders/confirm');
+      setSuccessMsg('¡Pedido registrado y enviado a cocina con éxito!');
+      setItems((prev) => prev.map((item) => ({ ...item, quantity: 0 })));
+      setSpecialNotes('');
+      setTimeout(() => {
+        onNavigate('/waiter/orders');
+      }, 1000);
     } catch (err: any) {
       setError(err.message || 'No se pudo enviar el pedido.');
     } finally {
@@ -157,23 +178,50 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
 
         <div className="card-order-catalog">
           <div className="catalog-header-text">
-            <span className="catalog-tag">GESTIÓN DE PEDIDOS</span>
+            <span className="catalog-tag">SUCURSAL {selectedBranchLabel}</span>
             <h2>Tomar nuevo pedido</h2>
-            <p>Registra el pedido para enviar directamente a cocina respetando la disponibilidad.</p>
+            <p>Puedes registrar varios pedidos sincronizados en tiempo real con la disponibilidad del menú.</p>
           </div>
 
-          {error && <div className="alert-error" style={{ background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem' }}>{error}</div>}
+          {error && (
+            <div
+              className="alert-error"
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                padding: '0.6rem 0.9rem',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {successMsg && (
+            <div
+              className="alert-success"
+              style={{
+                background: '#059669',
+                color: '#fff',
+                padding: '0.6rem 0.9rem',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+              }}
+            >
+              {successMsg}
+            </div>
+          )}
 
           <div className="order-options-grid">
             <div className="form-group">
               <label>Sucursal</label>
-              <select
-                value={selectedBranch}
-                onChange={e => setSelectedBranch(e.target.value)}
-              >
-                <option value="Centro">Centro</option>
-                <option value="Bambu">Bambu</option>
-                <option value="Ramblas">Ramblas</option>
+              <select value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+                {BRANCHES.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -181,31 +229,37 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
               <label>Servicio</label>
               <select
                 value={serviceType}
-                onChange={e => setServiceType(e.target.value as 'DINE_IN' | 'TAKEAWAY')}
+                onChange={(e) => setServiceType(e.target.value as 'DINE_IN' | 'TAKEAWAY')}
               >
                 <option value="DINE_IN">En mesa · DINE_IN</option>
                 <option value="TAKEAWAY">Para llevar · TAKEAWAY</option>
               </select>
             </div>
-
-            <div className="form-group">
-              <label>Mesa</label>
-              <select
-                value={tableNumber}
-                onChange={e => setTableNumber(e.target.value)}
-                disabled={serviceType === 'TAKEAWAY'}
-              >
-                {Array.from({ length: 10 }, (_, i) => {
-                  const num = String(i + 1).padStart(2, '0');
-                  return (
-                    <option key={num} value={`Mesa ${num}`}>
-                      Mesa {num}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
           </div>
+
+          {serviceType === 'DINE_IN' && (
+            <div className="order-options-grid">
+              <div className="form-group">
+                <label>Mesa</label>
+                <select
+                  value={selectedTableId}
+                  onChange={(e) => setSelectedTableId(e.target.value)}
+                  disabled={tables.length === 0}
+                >
+                  {tables.length === 0 ? (
+                    <option value="">Sin mesas disponibles</option>
+                  ) : (
+                    tables.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <div />
+            </div>
+          )}
 
           <div className="menu-filter-section">
             <div className="form-group search-bar-mesero">
@@ -214,12 +268,12 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
                 type="text"
                 placeholder="Buscar por nombre..."
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             <div className="category-tabs-mesero">
-              {['Todos', 'Entradas', 'Platos fuertes', 'Bebidas', 'Postres'].map(tab => (
+              {['Todos', 'Entradas', 'Platos fuertes', 'Bebidas', 'Postres'].map((tab) => (
                 <button
                   key={tab}
                   type="button"
@@ -238,7 +292,7 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
             ) : filteredItems.length === 0 ? (
               <div className="empty-menu-state">No se encontraron platillos con ese filtro.</div>
             ) : (
-              filteredItems.map(item => (
+              filteredItems.map((item) => (
                 <div
                   key={item.id}
                   className={`order-item-row ${!item.isAvailable ? 'item-unavailable' : ''} ${
@@ -246,12 +300,18 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
                   }`}
                 >
                   <div className="dish-info-left">
-                    <div className={`status-dot ${item.isAvailable ? 'available' : 'unavailable'}`} style={{ background: item.isAvailable ? '#059669' : '#ef4444' }}></div>
+                    <div
+                      className={`status-dot ${item.isAvailable ? 'available' : 'unavailable'}`}
+                      style={{ background: item.isAvailable ? '#059669' : '#ef4444' }}
+                    />
                     <div>
                       <h4 className="item-title">{item.name}</h4>
                       <span className="item-sub">
                         {getCategoryLabel(item.category)} ·{' '}
-                        <strong className={item.isAvailable ? 'text-avail' : 'text-unavail'} style={{ color: item.isAvailable ? '#059669' : '#ef4444' }}>
+                        <strong
+                          className={item.isAvailable ? 'text-avail' : 'text-unavail'}
+                          style={{ color: item.isAvailable ? '#059669' : '#ef4444' }}
+                        >
                           {item.isAvailable ? 'Disponible' : 'No disponible'}
                         </strong>
                       </span>
@@ -264,7 +324,7 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
                       <button
                         type="button"
                         onClick={() => handleQuantityChange(item.id, -1)}
-                        disabled={!item.isAvailable || item.quantity === 0}
+                        disabled={!item.isAvailable || item.quantity === 0 || submitting}
                       >
                         −
                       </button>
@@ -272,7 +332,7 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
                       <button
                         type="button"
                         onClick={() => handleQuantityChange(item.id, 1)}
-                        disabled={!item.isAvailable}
+                        disabled={!item.isAvailable || submitting}
                       >
                         +
                       </button>
@@ -284,11 +344,11 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
           </div>
 
           <div className="form-group notes-group">
-            <label>Notas especiales por pedido</label>
+            <label>Notas especiales por platillo</label>
             <textarea
               rows={3}
               value={specialNotes}
-              onChange={e => setSpecialNotes(e.target.value)}
+              onChange={(e) => setSpecialNotes(e.target.value)}
               placeholder="Ej. Sin cebolla, término medio..."
             />
           </div>
@@ -302,14 +362,23 @@ export function MeseroNuevoPedidoApp({ onNavigate }: { onNavigate: (path: string
           </div>
 
           <div className="form-actions">
-            <button 
-              type="button" 
-              className="btn-primary-green btn-full" 
-              onClick={handleConfirmOrder} 
-              disabled={submitting}
-              style={{ background: '#059669', color: '#fff', padding: '0.75rem', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}
+            <button
+              type="button"
+              className="btn-primary-green btn-full"
+              disabled={submitting || subtotal === 0}
+              onClick={handleConfirmOrder}
+              style={{
+                background: '#059669',
+                color: '#fff',
+                padding: '0.75rem',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                width: '100%',
+              }}
             >
-              {submitting ? 'Enviando a cocina...' : 'Confirmar y enviar a cocina'}
+              {submitting ? 'Confirmando pedido...' : 'Confirmar pedido'}
             </button>
           </div>
         </div>
