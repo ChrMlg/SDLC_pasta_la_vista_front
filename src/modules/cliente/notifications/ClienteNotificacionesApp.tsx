@@ -1,99 +1,101 @@
-import React, { useState } from 'react';
-import './notificaciones-cliente.css';
+import React, { useState, useEffect } from 'react';
+import {
+  fetchMyNotifications,
+  NotificationRecord,
+} from '../../notifications/notifications-api';
+import '../../notifications/notifications.css';
 
-interface CustomerNotification {
-  id: string;
-  title: string;
-  description: string;
-  sourceModule: string;
-  timeAgo: string;
-}
+export function ClienteNotificacionesApp({
+  onNavigate,
+}: {
+  onNavigate: (path: string) => void;
+}) {
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-export function ClienteNotificacionesApp({ onNavigate }: { onNavigate: (path: string) => void }) {
-  const [notifications, setNotifications] = useState<CustomerNotification[]>([]);
-
-  const handleRefresh = () => {
-    // Aquí se conectará la petición GET /api/notifications para cargar la data real del backend
-    alert('Conectando con el backend para actualizar notificaciones...');
-    
-    // Ejemplo de cómo se llenarán las tarjetas al recibir la data del servidor:
-    /*
-    setNotifications([
-      {
-        id: '1',
-        title: 'Reservación confirmada',
-        description: 'Centro · 05 nov. 2026 · 14:00 · Mesa 04',
-        sourceModule: 'RESERVATIONS',
-        timeAgo: 'hace 8 minutos'
-      },
-      {
-        id: '2',
-        title: 'Pedido entregado',
-        description: 'El pedido #0102 fue entregado correctamente.',
-        sourceModule: 'KITCHEN',
-        timeAgo: 'hace 1 hora'
-      }
-    ]);
-    */
+  const loadNotifications = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const list = await fetchMyNotifications();
+      setNotifications(list);
+    } catch (err: any) {
+      setError(err.message || 'No se pudieron cargar tus notificaciones.');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
   return (
-    <div className="notif-cliente-container">
-      <header className="notif-cliente-header-bar">
+    <div className="notif-container">
+      <header className="notif-header-bar">
         <div className="breadcrumb">
           Cliente / <strong>Bandeja de notificaciones</strong>
         </div>
       </header>
 
-      <main className="notif-cliente-content">
+      <main className="notif-content">
         <div className="meta-info">
-          <span className="route-tag">/notifications</span>
         </div>
 
-        <h1>Bandeja de notificaciones</h1>
+        <h1>Mis notificaciones</h1>
+
 
         <div className="card-notif-panel">
-          <div className="catalog-header-top">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <span className="catalog-tag">TU CENTRO DE AVISOS</span>
-              <h2>Notificaciones</h2>
-              <p>Eventos de pedidos, reservas y pagos dirigidos a tu cuenta.</p>
+              <span className="catalog-tag">BANDEJA PERSONAL</span>
+              <h2 style={{ margin: '0.2rem 0' }}>Avisos recientes ({notifications.length})</h2>
             </div>
-            <button type="button" className="btn-actualizar" onClick={handleRefresh}>
-              Actualizar
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button type="button" className="btn-secondary" onClick={loadNotifications}>
+                Actualizar
+              </button>
+              <button
+                type="button"
+                className="btn-primary-green"
+                onClick={() => onNavigate('/orders/new')}
+              >
+                Ir a pedidos
+              </button>
+            </div>
           </div>
 
-          <div className="badge-new-count">
-            {notifications.length} notificaciones nuevas
-          </div>
+          {error && <div className="alert-error-box" style={{ marginTop: '1rem' }}>{error}</div>}
 
-          {notifications.length === 0 ? (
-            <div className="empty-state-box">
-              No tienes notificaciones en este momento. Al recibir eventos del servidor, aparecerán aquí automáticamente.
+          {loading ? (
+            <div className="empty-column-state" style={{ marginTop: '1rem' }}>
+              Cargando notificaciones...
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="empty-column-state" style={{ marginTop: '1rem' }}>
+              No tienes notificaciones registradas por el momento.
             </div>
           ) : (
-            <div className="notif-items-list">
-              {notifications.map(item => (
-                <div key={item.id} className="notif-card-row">
-                  <div className="notif-title-bold">{item.title}</div>
-                  <div className="notif-desc-text">{item.description}</div>
-                  <div className="notif-meta-footer">
-                    <span>{item.sourceModule}</span> · <span>{item.timeAgo}</span>
+            <div className="notif-list">
+              {notifications.map((n) => (
+                <div key={n.id} className="notif-item-card">
+                  <div className="notif-item-header">
+                    <strong>{n.title}</strong>
+                    <span className="notif-module-pill">{n.sourceModule}</span>
+                  </div>
+                  <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: '#334155' }}>
+                    {n.message}
+                  </p>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                    {new Date(n.createdAt).toLocaleString()}
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="readonly-notice">
-            Solo lectura: no permite modificar ni eliminar avisos. Cada usuario ve únicamente los suyos.
-          </div>
-
-          <div className="form-actions">
-            <button type="button" className="btn-primary-green" onClick={() => onNavigate('/')}>
-              Continuar →
-            </button>
+          <div className="notif-readonly-note">
           </div>
         </div>
       </main>
