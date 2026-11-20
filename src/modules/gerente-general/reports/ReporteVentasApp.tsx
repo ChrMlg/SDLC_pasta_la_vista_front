@@ -3,12 +3,21 @@ import { BRANCHES } from '../../../shared/api-client';
 import { BranchSalesRow, fetchSalesReport } from './analytics-api';
 import './gerencia-reports.css';
 
-export function ReporteVentasApp({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function ReporteVentasApp({
+  onNavigate,
+}: {
+  onNavigate: (path: string) => void;
+}) {
   const today = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState('2026-10-01');
   const [endDate, setEndDate] = useState(today);
   const [salesData, setSalesData] = useState<BranchSalesRow[]>(
-    BRANCHES.map((b) => ({ branchId: b.id, branch: b.label, sales: 0, orders: 0 }))
+    BRANCHES.map((b) => ({
+      branchId: b.id,
+      branch: b.label,
+      sales: 0,
+      orders: 0,
+    }))
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

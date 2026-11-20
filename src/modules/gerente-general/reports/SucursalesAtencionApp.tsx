@@ -29,7 +29,10 @@ export function SucursalesAtencionApp() {
       const data = await fetchBranchPerformanceReport(startDate, endDate);
       setRows(data);
     } catch (err: any) {
-      setError(err.message || 'No se pudo cargar el desempeño operativo de sucursales.');
+      setError(
+        err.message ||
+          'No se pudo cargar el desempeño operativo de sucursales.'
+      );
     }
   };
 

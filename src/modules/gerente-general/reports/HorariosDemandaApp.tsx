@@ -33,12 +33,11 @@ export function HorariosDemandaApp() {
         <div className="breadcrumb">
           Gerencia general / <strong>Horarios de mayor demanda</strong>
         </div>
-        <div className="branch-badge">GENERAL_MANAGER </div>
+        <div className="branch-badge">GENERAL_MANAGER</div>
       </header>
 
       <main className="report-content">
         <div className="meta-info">
-
           <span className="route-tag">/reports/peak-hours</span>
         </div>
 
@@ -89,7 +88,8 @@ export function HorariosDemandaApp() {
           ) : (
             <div className="chart-container-box">
               {peakHours.map((slot, idx) => {
-                const pct = maxOrders > 0 ? Math.round((slot.orders / maxOrders) * 100) : 0;
+                const pct =
+                  maxOrders > 0 ? Math.round((slot.orders / maxOrders) * 100) : 0;
                 return (
                   <div key={idx} style={{ marginBottom: '0.75rem' }}>
                     <div
@@ -104,7 +104,10 @@ export function HorariosDemandaApp() {
                       <span>{slot.orders} pedidos</span>
                     </div>
                     <div className="progress-bar-track">
-                      <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                      <div
+                        className="progress-bar-fill"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                   </div>
                 );

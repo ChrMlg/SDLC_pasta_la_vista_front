@@ -12,7 +12,12 @@ export function ComparativaSucursalesApp({
   const [startDate, setStartDate] = useState('2026-10-01');
   const [endDate, setEndDate] = useState(today);
   const [rows, setRows] = useState<BranchSalesRow[]>(
-    BRANCHES.map((b) => ({ branchId: b.id, branch: b.label, sales: 0, orders: 0 }))
+    BRANCHES.map((b) => ({
+      branchId: b.id,
+      branch: b.label,
+      sales: 0,
+      orders: 0,
+    }))
   );
   const [error, setError] = useState('');
 
@@ -22,7 +27,9 @@ export function ComparativaSucursalesApp({
       const data = await fetchBranchesComparison(startDate, endDate);
       setRows(data);
     } catch (err: any) {
-      setError(err.message || 'No se pudo cargar la comparativa entre sucursales.');
+      setError(
+        err.message || 'No se pudo cargar la comparativa entre sucursales.'
+      );
     }
   };
 
@@ -38,13 +45,10 @@ export function ComparativaSucursalesApp({
         <div className="breadcrumb">
           Gerencia general / <strong>Comparativa entre sucursales</strong>
         </div>
-
       </header>
 
       <main className="report-content">
-        <div className="meta-info">
-
-        </div>
+        <div className="meta-info" />
 
         <h1>Comparativa entre sucursales</h1>
         <p className="subtitle-desc">
@@ -85,7 +89,8 @@ export function ComparativaSucursalesApp({
 
           <div className="chart-container-box">
             {rows.map((r) => {
-              const pct = totalSales > 0 ? Math.round((r.sales / totalSales) * 100) : 0;
+              const pct =
+                totalSales > 0 ? Math.round((r.sales / totalSales) * 100) : 0;
               return (
                 <div key={r.branchId} style={{ marginBottom: '0.85rem' }}>
                   <div
@@ -102,7 +107,10 @@ export function ComparativaSucursalesApp({
                     </span>
                   </div>
                   <div className="progress-bar-track">
-                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
                 </div>
               );
@@ -117,7 +125,14 @@ export function ComparativaSucursalesApp({
 
             <div className="metric-card-box">
               <h4 style={{ margin: '0 0 0.75rem 0' }}>Pedidos pagados por sede</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.9rem' }}>
+              <ul
+                style={{
+                  listStyle: 'none',
+                  padding: 0,
+                  margin: 0,
+                  fontSize: '0.9rem',
+                }}
+              >
                 {rows.map((item) => (
                   <li
                     key={item.branchId}
