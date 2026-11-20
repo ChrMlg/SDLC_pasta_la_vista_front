@@ -1,8 +1,8 @@
-const API_URL = '/api';
+import { apiRequest, extractArray } from '../../../shared/api-client';
 
 export interface PublicMenuItem {
   id: string;
-  branchId: string;
+  branchId?: string;
   name: string;
   description?: string;
   category: string;
@@ -10,10 +10,17 @@ export interface PublicMenuItem {
   isAvailable: boolean;
 }
 
+export interface BranchTableOption {
+  id: string;
+  number: number | string;
+  label: string;
+  status?: string;
+}
+
 export interface CreateOrderPayload {
   branchId: string;
   serviceType: 'DINE_IN' | 'TAKEAWAY';
-  tableNumber: string | null;
+  tableId?: string | null;
   items: {
     menuItemId: string;
     quantity: number;
@@ -21,58 +28,80 @@ export interface CreateOrderPayload {
   }[];
 }
 
-// Descarga barriendo páginas secuenciales hasta que el servidor devuelva una lista vacía
 export async function fetchAllWaiterMenuItems(branchId: string): Promise<PublicMenuItem[]> {
   let allItems: PublicMenuItem[] = [];
   let currentPage = 1;
-  let hasMore = true;
+  let totalPages = 1;
 
-  while (hasMore && currentPage <= 10) { // Límite de seguridad de 10 páginas (100 platillos)
+  while (currentPage <= totalPages && currentPage <= 25) {
     const params = new URLSearchParams();
     params.append('page', currentPage.toString());
 
-    const res = await fetch(`${API_URL}/branches/${branchId}/menu?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-      },
-      credentials: 'include',
-    });
+    const responseData = await apiRequest<any>(
+      `/branches/${branchId}/menu?${params.toString()}`
+    );
 
-    if (!res.ok) {
-      break; // Si una página falla o no existe, detenemos el ciclo de forma segura
-    }
-
-    const responseData = await res.json();
-    const pageItems = Array.isArray(responseData) ? responseData : (responseData.data || []);
-
+    const pageItems = extractArray<PublicMenuItem>(responseData);
     if (pageItems.length === 0) {
-      hasMore = false;
-    } else {
-      allItems = [...allItems, ...pageItems];
-      currentPage++;
-      if (pageItems.length < 10) {
-        hasMore = false; // Si trae menos de 10, era la última página
-      }
+      break;
     }
+
+    const uniqueNew = pageItems.filter(
+      (item) => !allItems.some((existing) => existing.id === item.id)
+    );
+    allItems = [...allItems, ...uniqueNew];
+
+    if (
+      !Array.isArray(responseData) &&
+      typeof responseData?.total === 'number' &&
+      typeof responseData?.pageSize === 'number' &&
+      responseData.pageSize > 0
+    ) {
+      totalPages = Math.ceil(responseData.total / responseData.pageSize);
+    } else if (pageItems.length < 10) {
+      break;
+    }
+
+    currentPage++;
   }
 
   return allItems;
 }
 
-export async function createWaiterOrder(payload: CreateOrderPayload) {
-  const res = await fetch(`${API_URL}/orders`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(payload),
+export async function fetchBranchTables(branchId: string): Promise<BranchTableOption[]> {
+  const data = await apiRequest<any>(`/branches/${branchId}/tables`);
+  const list = extractArray<any>(data);
+  return list.map((t: any, idx: number) => {
+    const num = t?.number ?? idx + 1;
+    const padded = String(num).padStart(2, '0');
+    return {
+      id: String(t.id),
+      number: num,
+      label: t?.name || `Mesa ${padded}`,
+      status: t?.status,
+    };
   });
+}
 
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.message || 'Error al registrar el pedido en el servidor');
+export async function createWaiterOrder(payload: CreateOrderPayload) {
+  const mappedItems = payload.items.map((item) => ({
+    dishId: item.menuItemId,
+    quantity: item.quantity,
+    ...(item.notes ? { notes: item.notes } : {}),
+  }));
+
+  const apiBody: Record<string, unknown> = {
+    branchId: payload.branchId,
+    type: payload.serviceType,
+    items: mappedItems,
+  };
+
+  if (payload.serviceType === 'DINE_IN' && payload.tableId) {
+    apiBody.tableId = payload.tableId;
   }
 
-  return res.json();
+  return apiRequest('/orders', {
+    method: 'POST',
+    body: JSON.stringify(apiBody),
+  });
 }

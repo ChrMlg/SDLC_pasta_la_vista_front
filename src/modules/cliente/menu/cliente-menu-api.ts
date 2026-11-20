@@ -1,4 +1,4 @@
-const API_URL = '/api';
+import { apiRequest, extractArray } from '../../../shared/api-client';
 
 export interface ClientMenuItem {
   id: string;
@@ -10,85 +10,42 @@ export interface ClientMenuItem {
   isAvailable: boolean;
 }
 
-export interface CreateOrderPayload {
-  branchId: string;
-  serviceType: 'DINE_IN' | 'TAKEAWAY';
-  tableNumber: string | null;
-  items: {
-    menuItemId: string;
-    quantity: number;
-    notes?: string;
-  }[];
-}
-
-export async function fetchAllClientOrderMenuItems(branchId: string): Promise<ClientMenuItem[]> {
+export async function fetchAllClientMenuItems(branchId: string): Promise<ClientMenuItem[]> {
   let allItems: ClientMenuItem[] = [];
   let currentPage = 1;
   let totalPages = 1;
 
-  console.log('=== INICIANDO BARRIDO DE PÁGINAS ===');
+  while (currentPage <= totalPages && currentPage <= 25) {
+    const params = new URLSearchParams();
+    params.append('page', currentPage.toString());
 
-  while (currentPage <= totalPages) {
-    // Forzamos el parámetro de página explícitamente en la URL como string plano
-    const endpoint = `${API_URL}/branches/${branchId}/menu?page=${currentPage}`;
-    console.log(`-> Solicitando: ${endpoint}`);
+    const responseData = await apiRequest<any>(
+      `/branches/${branchId}/menu?${params.toString()}`
+    );
 
-    const res = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-      },
-      credentials: 'include',
-    });
-
-    if (!res.ok) {
-      console.error(`Error HTTP ${res.status} en página ${currentPage}`);
-      break;
-    }
-
-    const responseData = await res.json();
-    console.log(`<- Respuesta página ${currentPage}:`, responseData);
-
-    const pageItems: ClientMenuItem[] = Array.isArray(responseData) ? responseData : (responseData.data || []);
-    
+    const pageItems = extractArray<ClientMenuItem>(responseData);
     if (pageItems.length === 0) {
-      console.log('Página vacía, terminando barrido.');
       break;
     }
 
-    // Añadimos solo elementos únicos para evitar duplicados
-    const newItems = pageItems.filter((newItem: ClientMenuItem) => !allItems.some(existing => existing.id === newItem.id));
-    allItems = [...allItems, ...newItems];
+    const uniqueNew = pageItems.filter(
+      (item) => !allItems.some((existing) => existing.id === item.id)
+    );
+    allItems = [...allItems, ...uniqueNew];
 
-    // Calculamos el total de páginas real usando total y pageSize del JSON
-    if (!Array.isArray(responseData) && typeof responseData.total === 'number' && typeof responseData.pageSize === 'number') {
+    if (
+      !Array.isArray(responseData) &&
+      typeof responseData?.total === 'number' &&
+      typeof responseData?.pageSize === 'number' &&
+      responseData.pageSize > 0
+    ) {
       totalPages = Math.ceil(responseData.total / responseData.pageSize);
-      console.log(`-> Total platillos: ${responseData.total} | PageSize: ${responseData.pageSize} | Total Páginas calculadas: ${totalPages}`);
-    } else {
+    } else if (pageItems.length < 10) {
       break;
     }
 
     currentPage++;
-    if (currentPage > 10) break; // Límite de seguridad
   }
 
-  console.log('=== BARRIDO FINALIZADO. Total acumulado:', allItems.length);
   return allItems;
-}
-
-export async function createClientOrder(payload: CreateOrderPayload) {
-  const res = await fetch(`${API_URL}/orders`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.message || 'Error al registrar el pedido en el servidor');
-  }
-
-  return res.json();
 }
