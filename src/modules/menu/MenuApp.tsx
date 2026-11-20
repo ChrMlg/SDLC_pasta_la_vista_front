@@ -14,6 +14,7 @@ import { ReservationsManagement } from '../reservations/ReservationsManagement';
 import { InventoryPage } from '../inventory/InventoryPage';
 import { MyLoyalty } from '../loyalty/MyLoyalty';
 import { LoyaltyRules } from '../loyalty/LoyaltyRules';
+import { RedeemPoints } from '../loyalty/RedeemPoints';
 import { CustomerJourney } from '../orders/CustomerJourney';
 import { OrdersBoard } from '../orders/OrdersBoard';
 
@@ -217,6 +218,7 @@ function AppRoutes({ session, selectedBranchId, onAddDish }: MenuAppProps) {
       : <main className="shell"><p role="alert" className="error">No tiene permiso para ver esta pantalla.</p></main>} />
     <Route path="/my-loyalty" element={<MyLoyalty role={session?.role ?? ''} />} />
     <Route path="/management/loyalty" element={<LoyaltyRules role={session?.role ?? ''} />} />
+    <Route path="/loyalty/redeem" element={<RedeemPoints role={session?.role ?? ''} />} />
     <Route path="/management/menu" element={canManage ? <MenuList key={adminBranch!} branchId={adminBranch!} admin /> : <p>No tiene permiso para administrar este menú</p>} />
     <Route path="/management/menu/new" element={canManage ? <MenuForm branchId={adminBranch!} /> : <p>No tiene permiso para administrar este menú</p>} />
     <Route path="/management/menu/:menuItemId/edit" element={canManage ? <EditRoute branchId={adminBranch!} /> : <p>No tiene permiso para administrar este menú</p>} />
