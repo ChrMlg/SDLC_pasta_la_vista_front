@@ -1,4 +1,5 @@
 import React from 'react';
+import { COMPANION_ROUTES } from '../../../shared/module-bridges';
 import './cliente-order.css';
 
 interface PedidoCreadoProps {
@@ -32,50 +33,25 @@ export function PedidoCreadoApp({ onNavigate, createdData }: PedidoCreadoProps) 
         <div className="breadcrumb">
           Cliente / <strong>Pedido creado</strong>
         </div>
-        <div className="branch-badge">{branchName} · Conectado al Back</div>
       </header>
 
       <main className="cliente-content">
         <div className="meta-info">
-          <span className="badge-h">H5 · CUSTOMER</span>
-          <span className="route-tag">/my-orders</span>
+
         </div>
 
         <h1>Pedido creado</h1>
-        <p className="subtitle-desc">
-          Confirmación del registro en el sistema
-        </p>
+        <p className="subtitle-desc">Confirmación del registro en el sistema</p>
 
         <div className="card-order-catalog" style={{ textAlign: 'center' }}>
           <div style={{ marginBottom: '0.75rem' }}>
-            <span
-              className="status-badge available"
-              style={{ fontSize: '0.75rem', letterSpacing: '0.04em' }}
-            >
-              PEDIDO REGISTRADO
-            </span>
+            <span className="status-badge available">PEDIDO REGISTRADO</span>
           </div>
 
           <h2 style={{ fontSize: '1.75rem', margin: '0.25rem 0' }}>
             Pedido {String(orderCode).startsWith('#') ? orderCode : `#${orderCode}`}
           </h2>
-          <p style={{ color: '#64748b', marginBottom: '1.25rem' }}>
-            Estado: {statusLabel}
-          </p>
-
-          <div
-            style={{
-              background: '#e6ebe0',
-              borderRadius: '8px',
-              padding: '1.1rem',
-              marginBottom: '1rem',
-              color: '#1b4332',
-              fontSize: '1.25rem',
-              fontWeight: 'bold',
-            }}
-          >
-            ✓
-          </div>
+          <p style={{ color: '#64748b', marginBottom: '1.25rem' }}>Estado: {statusLabel}</p>
 
           <div className="availability-box" style={{ textAlign: 'left', marginBottom: '1.25rem' }}>
             <div className="availability-row-detail" style={{ marginBottom: '0.5rem' }}>
@@ -87,21 +63,40 @@ export function PedidoCreadoApp({ onNavigate, createdData }: PedidoCreadoProps) 
               <strong>{isDineIn ? 'En mesa' : 'Para llevar'}</strong>
             </div>
             <div className="availability-row-detail">
-              <span>Envío a Cocina</span>
+              <span>Flujo operativo</span>
               <strong>
-                {isDineIn ? 'Comanda creada' : 'En espera de pago (PAID)'}
+                {isDineIn
+                  ? 'Comanda enviada a Cocina (Módulo 3)'
+                  : 'Pendiente de pago (PAID) en Módulo 6 para entrar a Cocina'}
               </strong>
             </div>
           </div>
 
-          <button
-            type="button"
-            className="btn-secondary"
-            style={{ width: '100%', padding: '0.75rem', fontWeight: 600 }}
-            onClick={() => onNavigate('/orders/new')}
-          >
-            Ver mis pedidos / Volver al menú
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {!isDineIn && (
+              <button
+                type="button"
+                className="btn-primary-green"
+                onClick={() => onNavigate(COMPANION_ROUTES.billingCheckoutRoute(order.id))}
+              >
+                Pagar pedido
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => onNavigate('/notifications')}
+            >
+              Ver notificaciones
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => onNavigate('/orders/new')}
+            >
+              Hacer otro pedido
+            </button>
+          </div>
         </div>
       </main>
     </div>

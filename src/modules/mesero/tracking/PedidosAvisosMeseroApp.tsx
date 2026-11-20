@@ -1,38 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiRequest, extractArray, BRANCHES, DEFAULT_BRANCH_ID } from '../../../shared/api-client';
 import './mesero-tracking.css';
 
-export interface WaiterOrderNotification {
+export interface WaiterOrderItem {
   id: string;
-  orderNumber: string;
-  status: 'IN_PREPARATION' | 'READY' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
-  tableOrService?: string;
-  itemsSummary?: string[];
+  orderNumber?: number | string;
+  type?: 'DINE_IN' | 'TAKEAWAY';
+  status: string;
+  tableNumber?: string | number | null;
+  tableId?: string | null;
+  branchId?: string;
 }
+
+export type WaiterOrderNotification = WaiterOrderItem;
 
 interface PedidosAvisosMeseroProps {
-  onNavigate: (path: string, order?: WaiterOrderNotification) => void;
-  orders?: WaiterOrderNotification[];
+  onNavigate: (path: string, order?: any) => void;
+  defaultBranchId?: string | null;
 }
 
-type FilterTab = 'ALL' | 'PREPARATION' | 'READY' | 'DELIVERY';
+export function PedidosAvisosMeseroApp({ onNavigate, defaultBranchId }: PedidosAvisosMeseroProps) {
+  const [branchId, setBranchId] = useState(defaultBranchId || DEFAULT_BRANCH_ID);
+  const [activeTab, setActiveTab] = useState<'Todos' | 'Preparación' | 'Listos' | 'Entrega'>('Todos');
+  const [orders, setOrders] = useState<WaiterOrderItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-export function PedidosAvisosMeseroApp({
-  onNavigate,
-  orders = [],
-}: PedidosAvisosMeseroProps) {
-  const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
+  const loadOrdersForSelectedBranch = async (targetBranchId: string) => {
+    try {
+      setLoading(true);
+      setErrorMsg('');
+      const data = await apiRequest<any>(`/branches/${targetBranchId}/orders`);
+      const list = extractArray<WaiterOrderItem>(data);
+      setOrders(list);
+    } catch (err: any) {
+      setOrders([]);
+      if (err?.status === 403 || err?.status === 404) {
+        setErrorMsg('No tienes acceso a los pedidos de esta sucursal.');
+      } else {
+        setErrorMsg(err?.message || 'No se pudieron cargar los pedidos.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOrdersForSelectedBranch(branchId);
+  }, [branchId]);
 
   const filteredOrders = orders.filter((order) => {
-    if (activeTab === 'PREPARATION') return order.status === 'IN_PREPARATION';
-    if (activeTab === 'READY') return order.status === 'READY';
-    if (activeTab === 'DELIVERY') {
-      return order.status === 'OUT_FOR_DELIVERY' || order.status === 'DELIVERED';
+    const st = String(order.status || '').toUpperCase();
+    if (activeTab === 'Preparación') {
+      return st === 'PREPARING' || st === 'IN_PREPARATION' || st === 'PENDING';
     }
+    if (activeTab === 'Listos') return st === 'READY';
+    if (activeTab === 'Entrega') return st === 'DELIVERED' || st === 'PICKED_UP';
     return true;
   });
 
-  const handleGoToDelivery = (order: WaiterOrderNotification) => {
-    onNavigate('/waiter/orders/delivery', order);
+  const getServiceLabel = (order: WaiterOrderItem) => {
+    if (order.type === 'TAKEAWAY') return 'Para llevar';
+    if (order.tableNumber) return `Mesa ${order.tableNumber}`;
+    return 'En mesa';
+  };
+
+  const getStatusPillClass = (status: string) => {
+    const st = String(status || '').toUpperCase();
+    if (st === 'READY') return 'status-pill ready';
+    if (st === 'DELIVERED' || st === 'PICKED_UP') return 'status-pill delivery';
+    return 'status-pill';
   };
 
   return (
@@ -41,112 +78,114 @@ export function PedidosAvisosMeseroApp({
         <div className="breadcrumb">
           Mesero / <strong>Pedidos y avisos</strong>
         </div>
-        <span className="branch-badge">H9 + H29 · WAITER</span>
       </header>
 
       <main className="mesero-track-content">
-        <h1>Pedidos y avisos de mesero</h1>
+        <div className="meta-info">
+          <span className="route-tag">/waiter/orders</span>
+        </div>
+
+        <h1>Pedidos y avisos del mesero</h1>
         <p className="subtitle-desc">
-          Seguimiento de estados y avisos en tiempo real listos para conectar con el backend.
+          Monitorea pedidos en preparación, listos en cocina y confirma recogida/entrega.
         </p>
 
         <div className="card-track-panel">
-          <div>
-            <span className="catalog-tag">SEGUIMIENTO OPERATIVO</span>
-            <h2 className="panel-title">Pedidos y avisos</h2>
-            <p className="panel-subtitle">
-              Filtra por estado y entra a recogida o entrega cuando el pedido esté listo.
-            </p>
+          {errorMsg && (
+            <div
+              className="alert-error"
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                padding: '0.6rem 0.9rem',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+              }}
+            >
+              {errorMsg}
+            </div>
+          )}
+
+          <div className="order-track-top">
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+                {BRANCHES.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => loadOrdersForSelectedBranch(branchId)}
+                disabled={loading}
+              >
+                {loading ? 'Actualizando...' : 'Actualizar'}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => onNavigate('/waiter/orders/new')}
+              >
+                ← Nuevo pedido
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => onNavigate('/notifications')}
+              >
+                Bandeja de avisos 
+              </button>
+            </div>
           </div>
 
           <div className="track-tabs-row">
-            <button
-              type="button"
-              className={`track-tab-btn ${activeTab === 'ALL' ? 'active' : ''}`}
-              onClick={() => setActiveTab('ALL')}
-            >
-              Todos
-            </button>
-            <button
-              type="button"
-              className={`track-tab-btn ${activeTab === 'PREPARATION' ? 'active' : ''}`}
-              onClick={() => setActiveTab('PREPARATION')}
-            >
-              Preparación
-            </button>
-            <button
-              type="button"
-              className={`track-tab-btn ${activeTab === 'READY' ? 'active' : ''}`}
-              onClick={() => setActiveTab('READY')}
-            >
-              Listos
-            </button>
-            <button
-              type="button"
-              className={`track-tab-btn ${activeTab === 'DELIVERY' ? 'active' : ''}`}
-              onClick={() => setActiveTab('DELIVERY')}
-            >
-              Entrega
-            </button>
+            {(['Todos', 'Preparación', 'Listos', 'Entrega'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                className={`track-tab-btn ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
-          {filteredOrders.length === 0 ? (
+          {loading ? (
+            <div className="empty-orders-box">Cargando pedidos...</div>
+          ) : filteredOrders.length === 0 ? (
             <div className="empty-orders-box">
-              No hay pedidos o avisos en este momento. Cuando entren órdenes desde el backend aparecerán aquí.
+              No hay pedidos en esta vista para la sucursal seleccionada.
             </div>
           ) : (
-            filteredOrders.map((order) => (
-              <div key={order.id} className="order-track-card">
-                <div className="order-track-top">
-                  <strong>Pedido #{order.orderNumber}</strong>
-                  <span className={`status-pill ${order.status === 'READY' ? 'ready' : ''}`}>
-                    {order.status}
-                  </span>
+            <div>
+              {filteredOrders.map((order, index) => (
+                <div key={order.id} className="order-track-card">
+                  <div className="order-track-bottom">
+                    <div>
+                      <strong>Pedido #{order.orderNumber ?? index + 1}</strong> ·{' '}
+                      {getServiceLabel(order)}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <span className={getStatusPillClass(order.status)}>{order.status}</span>
+                      <button
+                        type="button"
+                        className="btn-primary-green"
+                        onClick={() => onNavigate('/waiter/orders/deliver', order)}
+                      >
+                        Gestionar entrega →
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                {order.tableOrService && (
-                  <p className="step-card-desc">{order.tableOrService}</p>
-                )}
-
-                {order.itemsSummary && order.itemsSummary.length > 0 && (
-                  <ul className="comanda-items-list">
-                    {order.itemsSummary.map((line, idx) => (
-                      <li key={`${order.id}-${idx}`}>{line}</li>
-                    ))}
-                  </ul>
-                )}
-
-                <div className="order-track-bottom">
-                  <span className="sync-time">ID: {order.id}</span>
-                  <button
-                    type="button"
-                    className="btn-cocina btn-primary"
-                    onClick={() => handleGoToDelivery(order)}
-                    disabled={order.status !== 'READY' && order.status !== 'OUT_FOR_DELIVERY'}
-                  >
-                    Recoger pedido
-                  </button>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
-
-          <div className="track-footer-actions">
-            <button
-              type="button"
-              className="btn-cocina btn-secondary"
-              onClick={() => onNavigate('/waiter/orders/new')}
-            >
-              ← Nuevo pedido
-            </button>
-            <button
-              type="button"
-              className="btn-cocina btn-secondary"
-              onClick={() => onNavigate('/waiter/orders/delivery')}
-            >
-              Vista recogida y entrega (H9)
-            </button>
-          </div>
         </div>
       </main>
     </div>

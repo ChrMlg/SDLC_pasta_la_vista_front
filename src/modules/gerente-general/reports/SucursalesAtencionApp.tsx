@@ -1,20 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BRANCHES } from '../../../shared/api-client';
+import {
+  BranchPerformanceRow,
+  fetchBranchPerformanceReport,
+} from './analytics-api';
 import './gerencia-reports.css';
 
-interface BranchPerformanceRow {
-  branch: string;
-  sales: number;
-  difference: string;
-  status: string;
-}
-
 export function SucursalesAtencionApp() {
-  // Sucursales con ventas y diferencias en cero/preparadas para el backend
-  const [performanceData] = useState<BranchPerformanceRow[]>([
-    { branch: 'Centro', sales: 0, difference: '0.0%', status: 'Normal' },
-    { branch: 'Bambu', sales: 0, difference: '0.0%', status: 'Normal' },
-    { branch: 'Ramblas', sales: 0, difference: '0.0%', status: 'Normal' }
-  ]);
+  const today = new Date().toISOString().split('T')[0];
+  const [startDate, setStartDate] = useState('2026-10-01');
+  const [endDate, setEndDate] = useState(today);
+  const [rows, setRows] = useState<BranchPerformanceRow[]>(
+    BRANCHES.map((b) => ({
+      branchId: b.id,
+      branch: b.label,
+      sales: 0,
+      orders: 0,
+      averageTicket: 0,
+      diffVsAveragePct: 0,
+      needsAttention: false,
+    }))
+  );
+  const [error, setError] = useState('');
+
+  const loadPerformance = async () => {
+    try {
+      setError('');
+      const data = await fetchBranchPerformanceReport(startDate, endDate);
+      setRows(data);
+    } catch (err: any) {
+      setError(err.message || 'No se pudo cargar el desempeño operativo de sucursales.');
+    }
+  };
+
+  useEffect(() => {
+    loadPerformance();
+  }, [startDate, endDate]);
 
   return (
     <div className="report-container">
@@ -22,53 +43,70 @@ export function SucursalesAtencionApp() {
         <div className="breadcrumb">
           Gerencia general / <strong>Sucursales que requieren atención</strong>
         </div>
+        <div className="branch-badge">GENERAL_MANAGER · H35</div>
       </header>
 
       <main className="report-content">
         <div className="meta-info">
+          <span className="badge-h">H35 · GENERAL_MANAGER</span>
           <span className="route-tag">/reports/performance</span>
         </div>
 
         <h1>Sucursales que requieren atención</h1>
+        <p className="subtitle-desc">
+          Detección de sedes con desempeño por debajo del promedio de la cadena.
+        </p>
 
         <div className="card-report-panel">
-          <div className="catalog-header-text">
-            <span className="catalog-tag">ALERTAS DE NEGOCIO</span>
-            <h2>Desempeño de sucursales</h2>
-            <p>Comparación con el promedio de las sedes con datos.</p>
+          {error && <div className="alert-error-box">{error}</div>}
+
+          <div className="date-filters-grid">
+            <div className="form-group-report">
+              <label>Desde</label>
+              <input
+                type="date"
+                max={today}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="form-group-report">
+              <label>Hasta</label>
+              <input
+                type="date"
+                max={today}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
           </div>
 
-          {/* Tarjeta de promedio general */}
-          <div className="metric-card-box" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <span className="metric-desc">Promedio de ventas · muestra</span>
-              <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '0.2rem' }}>Umbral de atención</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div className="metric-value-lg" style={{ fontSize: '1.5rem' }}>$0</div>
-              <div style={{ fontSize: '0.8rem', color: '#b45309', fontWeight: 600 }}>Más de 20 % bajo promedio</div>
-            </div>
-          </div>
-
-          {/* Tabla de sucursales */}
           <table className="report-table">
             <thead>
               <tr>
                 <th>Sucursal</th>
                 <th>Ventas</th>
-                <th>Diferencia</th>
-                <th>Resultado</th>
+                <th>Pedidos</th>
+                <th>Variación vs promedio</th>
+                <th>Estado</th>
               </tr>
             </thead>
             <tbody>
-              {performanceData.map((row, idx) => (
-                <tr key={idx}>
-                  <td><strong>{row.branch}</strong></td>
-                  <td>${row.sales.toLocaleString()}</td>
-                  <td>{row.difference}</td>
+              {rows.map((r) => (
+                <tr key={r.branchId}>
                   <td>
-                    <span style={{ background: '#d1fae5', color: '#065f46', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
-                      {row.status}
+                    <strong>{r.branch}</strong>
+                  </td>
+                  <td>${r.sales.toFixed(2)}</td>
+                  <td>{r.orders}</td>
+                  <td>{r.diffVsAveragePct.toFixed(1)}%</td>
+                  <td>
+                    <span
+                      className={`status-badge ${
+                        r.needsAttention ? 'unavailable' : 'available'
+                      }`}
+                    >
+                      {r.needsAttention ? 'Requiere atención' : 'En rango'}
                     </span>
                   </td>
                 </tr>
@@ -76,8 +114,8 @@ export function SucursalesAtencionApp() {
             </tbody>
           </table>
 
-          <div className="dedup-notice-box" style={{ marginTop: '1.5rem' }}>
-            Las alertas de atención se activan si las ventas están más de un 20% por debajo del promedio. Una sucursal sin datos no se marca automáticamente.
+          <div className="footer-report-note">
+            Evaluado únicamente sobre pedidos pagados (PAID) y no anulados dentro del rango seleccionado.
           </div>
         </div>
       </main>

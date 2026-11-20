@@ -1,21 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BRANCHES } from '../../../shared/api-client';
+import { BranchSalesRow, fetchBranchesComparison } from './analytics-api';
 import './gerencia-reports.css';
 
-interface BranchOrderCount {
-  branch: string;
-  orders: number;
-}
-
-export function ComparativaSucursalesApp({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function ComparativaSucursalesApp({
+  onNavigate,
+}: {
+  onNavigate: (path: string) => void;
+}) {
   const today = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState('2026-10-01');
   const [endDate, setEndDate] = useState(today);
+  const [rows, setRows] = useState<BranchSalesRow[]>(
+    BRANCHES.map((b) => ({ branchId: b.id, branch: b.label, sales: 0, orders: 0 }))
+  );
+  const [error, setError] = useState('');
 
-  const [branchOrders] = useState<BranchOrderCount[]>([
-    { branch: 'Centro', orders: 0 },
-    { branch: 'Bambu', orders: 0 },
-    { branch: 'Ramblas', orders: 0 }
-  ]);
+  const loadComparison = async () => {
+    try {
+      setError('');
+      const data = await fetchBranchesComparison(startDate, endDate);
+      setRows(data);
+    } catch (err: any) {
+      setError(err.message || 'No se pudo cargar la comparativa entre sucursales.');
+    }
+  };
+
+  useEffect(() => {
+    loadComparison();
+  }, [startDate, endDate]);
+
+  const totalSales = rows.reduce((acc, r) => acc + r.sales, 0);
 
   return (
     <div className="report-container">
@@ -23,81 +38,111 @@ export function ComparativaSucursalesApp({ onNavigate }: { onNavigate: (path: st
         <div className="breadcrumb">
           Gerencia general / <strong>Comparativa entre sucursales</strong>
         </div>
+
       </header>
 
       <main className="report-content">
         <div className="meta-info">
-          <span className="route-tag">/reports/comparison</span>
+
         </div>
 
         <h1>Comparativa entre sucursales</h1>
+        <p className="subtitle-desc">
+          Mismo período, métricas y zona horaria para las 3 sucursales.
+        </p>
 
         <div className="card-report-panel">
-          <div className="catalog-header-text">
-            <span className="catalog-tag">ANÁLISIS</span>
-            <h2>Comparar sucursales</h2>
-            <p>Mismo período, métricas y zona horaria para todas las seleccionadas.</p>
-          </div>
+          {error && <div className="alert-error-box">{error}</div>}
 
-          {/* Filtros Desde / Hasta con restricción max={today} */}
           <div className="date-filters-grid">
             <div className="form-group-report">
               <label>Desde</label>
-              <input type="date" max={today} value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <input
+                type="date"
+                max={today}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
             <div className="form-group-report">
               <label>Hasta</label>
-              <input type="date" max={today} value={endDate} onChange={e => setEndDate(e.target.value)} />
+              <input
+                type="date"
+                max={today}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
           </div>
 
-          {/* Etiquetas de sucursales activas */}
           <div className="branch-pills-row">
-            <span className="branch-pill">✓ Centro</span>
-            <span className="branch-pill">✓ Bambu</span>
-            <span className="branch-pill">✓ Ramblas</span>
+            {rows.map((r) => (
+              <span key={r.branchId} className="branch-pill">
+                ✓ {r.branch}
+              </span>
+            ))}
           </div>
 
-          {/* Gráfico de líneas simulado */}
           <div className="chart-container-box">
-            <div className="mock-line-chart">
-              <span>[ Gráfico de tendencias de ventas por sucursal en tiempo real ]</span>
-            </div>
-            <div className="chart-legend">
-              <span><span className="legend-dot" style={{ background: '#064e3b' }}></span>Centro</span>
-              <span><span className="legend-dot" style={{ background: '#b45309' }}></span>Bambu</span>
-              <span><span className="legend-dot" style={{ background: '#64748b' }}></span>Ramblas</span>
-            </div>
+            {rows.map((r) => {
+              const pct = totalSales > 0 ? Math.round((r.sales / totalSales) * 100) : 0;
+              return (
+                <div key={r.branchId} style={{ marginBottom: '0.85rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: '0.88rem',
+                      marginBottom: '0.25rem',
+                    }}
+                  >
+                    <strong>{r.branch}</strong>
+                    <span>
+                      ${r.sales.toFixed(2)} ({pct}%)
+                    </span>
+                  </div>
+                  <div className="progress-bar-track">
+                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Grid inferior */}
           <div className="comparison-grid-bottom">
             <div className="metric-card-box">
-              <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', color: '#0f172a' }}>Participación de ventas</h4>
-              <div style={{ textAlign: 'center', padding: '1.5rem 0', color: '#64748b', fontSize: '0.85rem' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#064e3b', margin: '0 auto 0.75rem auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>3 sedes</div>
-                Gráfico de distribución por sucursal
-              </div>
+              <h4 style={{ margin: '0 0 0.75rem 0' }}>Ventas acumuladas</h4>
+              <div className="metric-value-lg">${totalSales.toFixed(2)}</div>
             </div>
 
             <div className="metric-card-box">
-              <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', color: '#0f172a' }}>Pedidos pagados</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {branchOrders.map((item, index) => (
-                  <li key={index} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: index < branchOrders.length - 1 ? '1px solid #e2e8f0' : 'none', paddingBottom: '0.4rem' }}>
-                    <span>{item.branch}</span> <strong>{item.orders}</strong>
+              <h4 style={{ margin: '0 0 0.75rem 0' }}>Pedidos pagados por sede</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.9rem' }}>
+                {rows.map((item) => (
+                  <li
+                    key={item.branchId}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '0.35rem 0',
+                      borderBottom: '1px solid #e2e8f0',
+                    }}
+                  >
+                    <span>{item.branch}</span>
+                    <strong>{item.orders}</strong>
                   </li>
                 ))}
               </ul>
             </div>
           </div>
 
-          {/* Botón de retorno */}
-          <div className="form-actions" style={{ marginTop: '1.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '1.5rem' }}>
-            <button type="button" className="btn-secondary" onClick={() => onNavigate('/reports/sales')}>
-              ← Volver al reporte de ventas
-            </button>
-          </div>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => onNavigate('/reports/sales')}
+          >
+            ← Volver al reporte de ventas
+          </button>
         </div>
       </main>
     </div>

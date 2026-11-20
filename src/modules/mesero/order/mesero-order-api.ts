@@ -1,13 +1,20 @@
-const API_URL = '/api';
+import { apiRequest, extractArray } from '../../../shared/api-client';
 
 export interface PublicMenuItem {
   id: string;
-  branchId: string;
+  branchId?: string;
   name: string;
   description?: string;
   category: string;
   price: number | string;
   isAvailable: boolean;
+}
+
+export interface BranchTableOption {
+  id: string;
+  number: number | string;
+  label: string;
+  status?: string;
 }
 
 export interface CreateOrderPayload {
@@ -21,44 +28,59 @@ export interface CreateOrderPayload {
   }[];
 }
 
-// Descarga barriendo páginas secuenciales hasta que el servidor devuelva una lista vacía
 export async function fetchAllWaiterMenuItems(branchId: string): Promise<PublicMenuItem[]> {
   let allItems: PublicMenuItem[] = [];
   let currentPage = 1;
-  let hasMore = true;
+  let totalPages = 1;
 
-  while (hasMore && currentPage <= 10) {
+  while (currentPage <= totalPages && currentPage <= 25) {
     const params = new URLSearchParams();
     params.append('page', currentPage.toString());
 
-    const res = await fetch(`${API_URL}/branches/${branchId}/menu?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-      },
-      credentials: 'include',
-    });
+    const responseData = await apiRequest<any>(
+      `/branches/${branchId}/menu?${params.toString()}`
+    );
 
-    if (!res.ok) {
+    const pageItems = extractArray<PublicMenuItem>(responseData);
+    if (pageItems.length === 0) {
       break;
     }
 
-    const responseData = await res.json();
-    const pageItems = Array.isArray(responseData) ? responseData : (responseData.data || []);
+    const uniqueNew = pageItems.filter(
+      (item) => !allItems.some((existing) => existing.id === item.id)
+    );
+    allItems = [...allItems, ...uniqueNew];
 
-    if (pageItems.length === 0) {
-      hasMore = false;
-    } else {
-      allItems = [...allItems, ...pageItems];
-      currentPage++;
-      if (pageItems.length < 10) {
-        hasMore = false;
-      }
+    if (
+      !Array.isArray(responseData) &&
+      typeof responseData?.total === 'number' &&
+      typeof responseData?.pageSize === 'number' &&
+      responseData.pageSize > 0
+    ) {
+      totalPages = Math.ceil(responseData.total / responseData.pageSize);
+    } else if (pageItems.length < 10) {
+      break;
     }
+
+    currentPage++;
   }
 
   return allItems;
+}
+
+export async function fetchBranchTables(branchId: string): Promise<BranchTableOption[]> {
+  const data = await apiRequest<any>(`/branches/${branchId}/tables`);
+  const list = extractArray<any>(data);
+  return list.map((t: any, idx: number) => {
+    const num = t?.number ?? idx + 1;
+    const padded = String(num).padStart(2, '0');
+    return {
+      id: String(t.id),
+      number: num,
+      label: t?.name || `Mesa ${padded}`,
+      status: t?.status,
+    };
+  });
 }
 
 export async function createWaiterOrder(payload: CreateOrderPayload) {
@@ -78,18 +100,8 @@ export async function createWaiterOrder(payload: CreateOrderPayload) {
     apiBody.tableId = payload.tableId;
   }
 
-  const res = await fetch(`${API_URL}/orders`, {
+  return apiRequest('/orders', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
     body: JSON.stringify(apiBody),
   });
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    const msg = Array.isArray(errData.message) ? errData.message.join(', ') : errData.message;
-    throw new Error(msg || 'Error al registrar el pedido en el servidor');
-  }
-
-  return res.json();
 }
