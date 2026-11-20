@@ -1,4 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { BRANCHES, DEFAULT_BRANCH_ID } from '../../../shared/api-client';
+import {
+  ActiveTableSelection,
+  BranchTableInfo,
+  COMPANION_ROUTES,
+} from '../../../shared/module-bridges';
+import {
+  assignCustomerTable,
+  fetchAllCustomerOrderMenuItems,
+  getCustomerSeatingState,
+} from './cliente-order-api';
 import './cliente-order.css';
 
 interface DishItem {
@@ -10,45 +21,85 @@ interface DishItem {
   quantity: number;
 }
 
-const BRANCH_MAP: Record<string, string> = {
-  Centro: 'a1111111-1111-4111-8111-111111111111',
-  Bambú: 'a2222222-2222-4222-8222-222222222222',
-  Ramblas: 'a3333333-3333-4333-8333-333333333333',
-};
-
-export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, orderData?: any) => void }) {
-  const [selectedBranch, setSelectedBranch] = useState('Centro');
+export function ClientePedidoApp({
+  onNavigate,
+}: {
+  onNavigate: (path: string, orderData?: any) => void;
+}) {
+  const [branchId, setBranchId] = useState(DEFAULT_BRANCH_ID);
   const [serviceType, setServiceType] = useState<'DINE_IN' | 'TAKEAWAY'>('DINE_IN');
-  const [tableNumber, setTableNumber] = useState('Mesa 01');
+  const [activeTable, setActiveTable] = useState<ActiveTableSelection | null>(null);
+  const [tables, setTables] = useState<BranchTableInfo[]>([]);
+  const [selectedTableId, setSelectedTableId] = useState('');
+  const [assigningTable, setAssigningTable] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('Todos');
+  const [notes, setNotes] = useState('');
 
   const [items, setItems] = useState<DishItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    loadClientMenu();
-  }, [selectedBranch]);
-
-  const loadClientMenu = async () => {
+  const loadClientContext = async () => {
     try {
       setLoading(true);
       setError('');
-      const branchId = BRANCH_MAP[selectedBranch] || 'a1111111-1111-4111-8111-111111111111';
-      
-      const response = await fetch(`/api/branches/${branchId}/menu`, {
-        credentials: 'include',
+
+      const [allDishes, seating] = await Promise.all([
+        fetchAllCustomerOrderMenuItems(branchId),
+        getCustomerSeatingState(branchId),
+      ]);
+
+      setActiveTable(seating.activeSelection);
+      setTables(seating.tables);
+
+      if (seating.activeSelection && seating.activeSelection.branchId === branchId) {
+        setSelectedTableId(seating.activeSelection.tableId);
+      } else if (seating.tables.length > 0) {
+        const firstAvailable =
+          seating.tables.find((t) => t.status === 'AVAILABLE') || seating.tables[0];
+        setSelectedTableId(firstAvailable.id);
+      } else {
+        setSelectedTableId('');
+      }
+
+      setItems((prev) => {
+        const qtyMap = new Map(prev.map((i) => [i.id, i.quantity]));
+        return allDishes.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          price: Number(item.price),
+          isAvailable: item.isAvailable,
+          quantity: qtyMap.get(item.id) || 0,
+        }));
       });
-      if (!response.ok) throw new Error('Error al obtener el menú del servidor');
-      const data = await response.json();
-      const list = Array.isArray(data) ? data : (data.data || []);
-      
-      setItems(list.map((item: any) => ({ ...item, quantity: 0 })));
-    } catch (err) {
-      setError('No se pudo conectar con el servidor para cargar el menú.');
+    } catch (err: any) {
+      setError(err.message || 'No se pudo conectar con el servidor para cargar el menú.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadClientContext();
+  }, [branchId]);
+
+  const handleAssignTable = async () => {
+    if (!selectedTableId) return;
+    try {
+      setAssigningTable(true);
+      setError('');
+      await assignCustomerTable(branchId, selectedTableId);
+      await loadClientContext();
+    } catch (err: any) {
+      setError(
+        err.message ||
+          'No se pudo asignar la mesa. Verifica el módulo de Selección de Mesa (Módulo 5).'
+      );
+    } finally {
+      setAssigningTable(false);
     }
   };
 
@@ -63,8 +114,8 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
   };
 
   const handleQuantityChange = (id: string, delta: number) => {
-    setItems(prev =>
-      prev.map(item => {
+    setItems((prev) =>
+      prev.map((item) => {
         if (item.id === id && item.isAvailable) {
           const newQty = Math.max(0, item.quantity + delta);
           return { ...item, quantity: newQty };
@@ -74,7 +125,7 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
     );
   };
 
-  const filteredItems = items.filter(item => {
+  const filteredItems = items.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const categoryLabel = getCategoryLabel(item.category);
     const matchesTab =
@@ -89,50 +140,75 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
   const subtotal = items.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0);
   const totalQuantity = items.reduce((acc, item) => acc + item.quantity, 0);
 
+  const selectedBranchLabel = BRANCHES.find((b) => b.id === branchId)?.label || 'Centro';
+  const hasValidTableForBranch =
+    Boolean(activeTable?.tableId) && activeTable?.branchId === branchId;
+  const resolvedTableId = hasValidTableForBranch
+    ? activeTable!.tableId
+    : selectedTableId || null;
+
   const handleReviewOrder = () => {
     if (subtotal === 0) {
-      alert('Pedido vacío. Añade artículos desde el menú.');
+      setError('Pedido vacío. Añade al menos un platillo disponible desde el menú.');
       return;
     }
-    const branchId = BRANCH_MAP[selectedBranch];
-    onNavigate('/orders/review', { branchId, selectedBranch, serviceType, tableNumber, items, subtotal });
+
+    onNavigate('/orders/review', {
+      branchId,
+      selectedBranch: selectedBranchLabel,
+      serviceType,
+      tableId: serviceType === 'DINE_IN' ? resolvedTableId : null,
+      tableNumber:
+        serviceType === 'DINE_IN'
+          ? activeTable?.tableNumber
+            ? `Mesa ${String(activeTable.tableNumber).padStart(2, '0')}`
+            : tables.find((t) => t.id === resolvedTableId)
+            ? `Mesa ${String(tables.find((t) => t.id === resolvedTableId)!.number).padStart(2, '0')}`
+            : 'Sin mesa asignada'
+          : undefined,
+      notes,
+      items,
+      subtotal,
+    });
   };
 
   return (
     <div className="cliente-container">
       <header className="cliente-header-bar">
-        <div className="breadcrumb">Cliente / <strong>Pedido por autoservicio</strong></div>
-        <div className="branch-badge">{selectedBranch} · Conectado al Back</div>
+        <div className="breadcrumb">
+          Cliente / <strong>Pedido por autoservicio</strong>
+        </div>
       </header>
 
       <main className="cliente-content">
         <div className="meta-info">
-          <span className="badge-h">H5 · CUSTOMER</span>
-          <span className="route-tag">/orders/new</span>
+
         </div>
 
         <h1>Pedido por autoservicio</h1>
-        <p className="subtitle-desc">Selecciona tus platillos disponibles en tiempo real.</p>
+        <p className="subtitle-desc">
+          Selecciona tus platillos disponibles en tiempo real.
+        </p>
 
-        {error && <div className="alert-error" style={{ background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem' }}>{error}</div>}
+        {error && <div className="alert-error-box">{error}</div>}
 
         <div className="card-order-catalog">
-          <div className="catalog-header-text">
+          <div style={{ marginBottom: '1.25rem' }}>
             <span className="catalog-tag">PEDIDO DIGITAL</span>
-            <h2>Arma tu pedido</h2>
-            <p>Los platillos se sincronizan con la disponibilidad del gerente.</p>
+            <h2 style={{ margin: '0.2rem 0' }}>Arma tu pedido</h2>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b' }}>
+              Los platillos se sincronizan con la disponibilidad configurada por el gerente.
+            </p>
           </div>
 
           <div className="form-group" style={{ marginBottom: '1.25rem' }}>
             <label>Sucursal</label>
-            <select
-              value={selectedBranch}
-              onChange={e => setSelectedBranch(e.target.value)}
-              className="form-select-custom"
-            >
-              <option value="Centro">Centro</option>
-              <option value="Bambú">Bambú</option>
-              <option value="Ramblas">Ramblas</option>
+            <select value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+              {BRANCHES.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -142,50 +218,93 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
               className={`toggle-btn ${serviceType === 'DINE_IN' ? 'active' : ''}`}
               onClick={() => setServiceType('DINE_IN')}
             >
-              En mesa
+              En mesa · DINE_IN
             </button>
             <button
               type="button"
               className={`toggle-btn ${serviceType === 'TAKEAWAY' ? 'active' : ''}`}
               onClick={() => setServiceType('TAKEAWAY')}
             >
-              Para llevar
+              Para llevar · TAKEAWAY
             </button>
           </div>
 
           {serviceType === 'DINE_IN' ? (
-            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-              <label>Seleccionar Mesa</label>
-              <select
-                value={tableNumber}
-                onChange={e => setTableNumber(e.target.value)}
-                className="form-select-custom"
-              >
-                {Array.from({ length: 10 }, (_, i) => {
-                  const num = String(i + 1).padStart(2, '0');
-                  return <option key={num} value={`Mesa ${num}`}>Mesa {num}</option>;
-                })}
-              </select>
+            <div className="info-banner">
+              {hasValidTableForBranch ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <span>
+                    Mesa vigente asignada en {selectedBranchLabel}:{' '}
+                    <strong>
+                      Mesa {String(activeTable?.tableNumber ?? '').padStart(2, '0')}
+                    </strong>{' '}
+                    ({activeTable?.tableId.slice(0, 8)}…)
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => onNavigate(COMPANION_ROUTES.seatingRoute)}
+                  >
+                    Cambiar mesa
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <select
+                      value={selectedTableId}
+                      onChange={(e) => setSelectedTableId(e.target.value)}
+                      style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    >
+                      {tables.length === 0 ? (
+                        <option value="">Sin mesas disponibles</option>
+                      ) : (
+                        tables.map((t) => (
+                          <option key={t.id} value={t.id} disabled={t.status !== 'AVAILABLE'}>
+                            Mesa {String(t.number).padStart(2, '0')} · {t.status}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn-primary-green"
+                      disabled={!selectedTableId || assigningTable}
+                      onClick={handleAssignTable}
+                    >
+                      {assigningTable ? 'Asignando...' : 'Asignar mesa ahora'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => onNavigate(COMPANION_ROUTES.seatingRoute)}
+                    >
+                      Ir a selección de mesa
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="info-banner" style={{ marginBottom: '1.25rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '6px', fontSize: '0.85rem', color: '#64748b' }}>
-              Para llevar: retiro directo en sucursal ({selectedBranch}), no requiere mesa.
+            <div className="info-banner">
+              Para llevar (<code>TAKEAWAY</code>): retiro en sucursal ({selectedBranchLabel}), no
+              requiere mesa y entra a cocina tras confirmar el pago
             </div>
           )}
 
           <div className="menu-filter-section">
-            <div className="form-group search-bar-mesero">
+            <div className="form-group">
               <label>Buscar platillo en el menú</label>
               <input
                 type="text"
                 placeholder="Buscar platillo..."
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             <div className="category-tabs-mesero">
-              {['Todos', 'Entradas', 'Platos fuertes', 'Bebidas', 'Postres'].map(tab => (
+              {['Todos', 'Entradas', 'Platos fuertes', 'Bebidas', 'Postres'].map((tab) => (
                 <button
                   key={tab}
                   type="button"
@@ -202,9 +321,11 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
             {loading ? (
               <div className="empty-menu-state">Cargando menú del servidor...</div>
             ) : filteredItems.length === 0 ? (
-              <div className="empty-menu-state">No hay platillos disponibles para esta selección.</div>
+              <div className="empty-menu-state">
+                No hay platillos disponibles para esta selección.
+              </div>
             ) : (
-              filteredItems.map(item => (
+              filteredItems.map((item) => (
                 <div
                   key={item.id}
                   className={`order-item-row ${!item.isAvailable ? 'item-unavailable' : ''} ${
@@ -212,11 +333,15 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
                   }`}
                 >
                   <div className="dish-info-left">
-                    <div className={`status-dot ${item.isAvailable ? 'available' : 'unavailable'}`} style={{ background: item.isAvailable ? '#059669' : '#ef4444' }}></div>
+                    <div
+                      className="status-dot"
+                      style={{ background: item.isAvailable ? '#059669' : '#ef4444' }}
+                    />
                     <div>
                       <h4 className="item-title">{item.name}</h4>
                       <span className="item-sub">
-                        {getCategoryLabel(item.category)} · <strong className={item.isAvailable ? 'text-avail' : 'text-unavail'} style={{ color: item.isAvailable ? '#059669' : '#ef4444' }}>
+                        {getCategoryLabel(item.category)} ·{' '}
+                        <strong style={{ color: item.isAvailable ? '#059669' : '#ef4444' }}>
                           {item.isAvailable ? `$${Number(item.price).toFixed(2)}` : 'No disponible'}
                         </strong>
                       </span>
@@ -224,7 +349,9 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
                   </div>
 
                   <div className="dish-action-right">
-                    <span className="item-unit-price">${(Number(item.price) * item.quantity).toFixed(2)}</span>
+                    <span className="item-unit-price">
+                      ${(Number(item.price) * item.quantity).toFixed(2)}
+                    </span>
                     <div className="stepper-control">
                       <button
                         type="button"
@@ -248,19 +375,34 @@ export function ClientePedidoApp({ onNavigate }: { onNavigate: (path: string, or
             )}
           </div>
 
+          <div className="form-group">
+            <label>Notas del pedido (opcional)</label>
+            <textarea
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ej. Sin picante, cubiertos extra..."
+            />
+          </div>
+
           <div className="order-totals-row">
             <div>
-              <span className="totals-label-sub">Subtotal</span>
-              <div className="totals-sub-desc">Platillos seleccionados: {totalQuantity}</div>
+              <span>Subtotal</span>
+              <span className="items-selected-pill">
+                Platillos seleccionados: {totalQuantity}
+              </span>
             </div>
             <span className="total-amount">${subtotal.toFixed(2)}</span>
           </div>
 
-          <div className="form-actions">
-            <button type="button" className="btn-primary-green btn-full" onClick={handleReviewOrder} style={{ background: '#059669', color: '#fff', padding: '0.75rem', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}>
-              Revisar pedido →
-            </button>
-          </div>
+          <button
+            type="button"
+            className="btn-primary-green"
+            style={{ width: '100%', padding: '0.85rem' }}
+            onClick={handleReviewOrder}
+          >
+            Revisar pedido →
+          </button>
         </div>
       </main>
     </div>
