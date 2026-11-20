@@ -1,127 +1,150 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiRequest, extractArray, DEFAULT_BRANCH_ID } from '../../../shared/api-client';
 import '../kitchen/cocina.css';
+import './cocina-items.css';
 
-interface PlatillosComandaProps {
-  onNavigate: (path: string, comandaId?: string) => void;
-  comandaId?: string;
-  branchId?: string;
+interface KitchenOrderItem {
+  id: string;
+  dishName?: string;
+  name?: string;
+  quantity: number;
+  note?: string | null;
+  isReady: boolean;
+  readyAt?: string | null;
 }
 
-interface PlatilloItem {
-  id: string;
-  name: string;
-  quantity: number;
-  isReady: boolean;
-  timeOrStatus: string;
+interface KitchenComanda {
+  orderId: string;
+  orderNumber?: number | string;
+  tableLabel?: string;
+  type?: string;
+  status: string;
+  items: KitchenOrderItem[];
+}
+
+interface PlatillosComandaProps {
+  onNavigate: (path: string, orderId?: any) => void;
+  selectedOrderId?: string | null;
+  orderId?: string | null;
+  branchId?: string | null;
 }
 
 export function PlatillosComandaApp({
   onNavigate,
-  comandaId,
-  branchId = 'a1111111-1111-4111-8111-111111111111',
+  selectedOrderId,
+  orderId,
+  branchId,
 }: PlatillosComandaProps) {
-  const [platillos, setPlatillos] = useState<PlatilloItem[]>([]);
-  const [orderStatus, setOrderStatus] = useState<string>('EN PROCESO');
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const activeBranchId = branchId || DEFAULT_BRANCH_ID;
+  const targetOrderId = selectedOrderId || orderId || '';
 
-  const loadPlatillos = useCallback(async () => {
-    if (!comandaId) return;
+  const [comanda, setComanda] = useState<KitchenComanda | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [readyDishMessage, setReadyDishMessage] = useState('');
+
+  const normalizeComanda = (raw: any): KitchenComanda | null => {
+    if (!raw) return null;
+    const rawItems = Array.isArray(raw.items) ? raw.items : [];
+    return {
+      orderId: String(raw.orderId ?? raw.id ?? ''),
+      orderNumber: raw.orderNumber,
+      tableLabel: raw.tableLabel,
+      type: raw.type,
+      status: String(raw.status || 'PENDING'),
+      items: rawItems.map((it: any) => ({
+        id: String(it.id ?? it.itemId ?? ''),
+        dishName: it.dishName ?? it.name ?? 'Platillo',
+        quantity: Number(it.quantity ?? 1),
+        note: it.note ?? null,
+        isReady: Boolean(it.isReady),
+        readyAt: it.readyAt ?? null,
+      })),
+    };
+  };
+
+  const loadComanda = async () => {
     try {
       setLoading(true);
-      setError('');
+      setErrorMsg('');
 
-      const res = await fetch(`/api/branches/${branchId}/kitchen/orders`, {
-        method: 'GET',
-        credentials: 'include',
-        cache: 'no-store',
-      });
+      if (!targetOrderId) {
+        setComanda(null);
+        return;
+      }
 
-      if (!res.ok) return;
+      const data = await apiRequest<any>(`/branches/${activeBranchId}/kitchen/orders`);
+      const list = Array.isArray(data?.items) ? data.items : extractArray<any>(data);
+      const found = list.find(
+        (o: any) => String(o.orderId ?? o.id ?? '') === String(targetOrderId)
+      );
 
-      const payload = await res.json();
-      const list: any[] = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.data)
-        ? payload.data
-        : Array.isArray(payload?.orders)
-        ? payload.orders
-        : [];
-
-      const found = list.find((o) => String(o?.id ?? o?.orderId ?? '') === String(comandaId));
-      if (!found) return;
-
-      const rawItems: any[] = Array.isArray(found.items) ? found.items : [];
-      const mapped: PlatilloItem[] = rawItems.map((it, idx) => {
-        const isReady = Boolean(it?.isReady ?? it?.ready ?? it?.status === 'READY');
-        const readyAtLabel = it?.readyAt
-          ? new Date(it.readyAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : '';
-        return {
-          id: String(it?.id ?? it?.itemId ?? `${comandaId}-${idx}`),
-          name: it?.name || it?.dishName || it?.menuItem?.name || 'Platillo',
-          quantity: Number(it?.quantity ?? 1),
-          isReady,
-          timeOrStatus: isReady ? `Listo${readyAtLabel ? ` · ${readyAtLabel}` : ''}` : 'Pendiente',
-        };
-      });
-
-      setPlatillos(mapped);
-      const allReady = mapped.length > 0 && mapped.every((p) => p.isReady);
-      setOrderStatus(allReady ? 'READY' : String(found.status ?? found.state ?? 'EN PROCESO').toUpperCase());
-    } catch {
-      // Mantiene la lista actual si ocurre un error de red temporal
+      if (found) {
+        setComanda(normalizeComanda(found));
+      } else {
+        setComanda((prev) => (prev && prev.orderId === String(targetOrderId) ? prev : null));
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'No se pudieron cargar los platillos de la comanda.');
     } finally {
       setLoading(false);
     }
-  }, [branchId, comandaId]);
+  };
 
   useEffect(() => {
-    loadPlatillos();
-  }, [loadPlatillos]);
+    setReadyDishMessage('');
+    loadComanda();
+  }, [targetOrderId, activeBranchId]);
 
-  const markItemReady = async (itemId: string) => {
-    if (!comandaId || !itemId) return;
+  const handleMarkItemReady = async (item: KitchenOrderItem) => {
+    if (!comanda || !comanda.orderId || updatingItemId) return;
+
     try {
-      setSubmitting(true);
-      setError('');
-      setMessage('');
+      setUpdatingItemId(item.id);
+      setErrorMsg('');
 
-      const res = await fetch(
-        `/api/branches/${branchId}/kitchen/orders/${comandaId}/items/${itemId}/ready`,
+      await apiRequest(
+        `/branches/${activeBranchId}/kitchen/orders/${comanda.orderId}/items/${item.id}/ready`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           cache: 'no-store',
         }
       );
 
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody?.message || `No se pudo marcar el platillo como listo (${res.status}).`);
-      }
+      const dishLabel = item.dishName ?? item.name ?? 'Platillo';
+      const nowLabel = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
 
-      setMessage('Platillo marcado como listo.');
-      await loadPlatillos();
+      const updatedItems = comanda.items.map((it) =>
+        it.id === item.id ? { ...it, isReady: true, readyAt: nowLabel } : it
+      );
+      const allReady = updatedItems.length > 0 && updatedItems.every((it) => it.isReady);
+
+      setComanda({
+        ...comanda,
+        status: allReady ? 'READY' : comanda.status,
+        items: updatedItems,
+      });
+
+      setReadyDishMessage(
+        allReady
+          ? `El platillo "${dishLabel}" ya está listo. ¡Todos los platillos de esta comanda ya están listos!`
+          : `El platillo "${dishLabel}" ya está listo.`
+      );
     } catch (err: any) {
-      setError(err?.message || 'Error al actualizar el platillo.');
+      setErrorMsg(err?.message || 'No se pudo marcar el platillo como listo.');
     } finally {
-      setSubmitting(false);
+      setUpdatingItemId(null);
     }
   };
 
-  const handleNextReady = async () => {
-    const nextItem = platillos.find((p) => !p.isReady);
-    if (!nextItem) return;
-    await markItemReady(nextItem.id);
-  };
-
-  const totalListos = platillos.filter((p) => p.isReady).length;
-  const progresoPorcentaje = platillos.length > 0 ? Math.round((totalListos / platillos.length) * 100) : 0;
-  const isAllReady = platillos.length > 0 && totalListos === platillos.length;
+  const totalCount = comanda?.items.length ?? 0;
+  const readyCount = comanda?.items.filter((i) => i.isReady).length ?? 0;
+  const nextPendingItem = comanda?.items.find((i) => !i.isReady);
+  const progressPercent = totalCount > 0 ? Math.round((readyCount / totalCount) * 100) : 0;
 
   return (
     <div className="cocina-container">
@@ -129,125 +152,131 @@ export function PlatillosComandaApp({
         <div className="breadcrumb">
           Cocina / <strong>Platillos de la comanda</strong>
         </div>
-        <div className="header-controls">
-          <span className="branch-badge">Cocina · H8</span>
-        </div>
       </header>
 
       <main className="cocina-content">
-        <div className="cocina-title-row">
-          <div>
-            <h1>Platillos de la comanda</h1>
-            <p className="subtitle-desc">H8 · Control de preparación por platillo.</p>
-          </div>
-          <button
-            type="button"
-            className="btn-cocina btn-secondary"
-            onClick={() => onNavigate('/kitchen/detail', comandaId)}
-          >
-            Ir a detalle (H7)
-          </button>
+        <div className="meta-info">
         </div>
 
-        {error && <div className="kitchen-notice-box kitchen-notice-warning">{error}</div>}
-        {message && <div className="kitchen-notice-box kitchen-notice-success">{message}</div>}
-
         <div className="card-cocina-panel">
-          <div className="live-header-row">
-            <div>
-              <span className="catalog-tag">
-                COMANDA {comandaId ? `#${comandaId.slice(0, 8)}` : 'ACTIVA'}
-              </span>
-              <h2 className="panel-title">Marca cada platillo listo</h2>
-              <p className="panel-subtitle">
-                Al completar todos, la comanda y el pedido cambian a READY.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="btn-cocina btn-dark"
-              onClick={loadPlatillos}
-              disabled={loading || submitting}
-            >
-              {loading ? 'Cargando...' : 'Refrescar'}
-            </button>
+          <div className="catalog-header-text">
+            <span className="catalog-tag">
+              PEDIDO #{comanda?.orderNumber ?? (targetOrderId || '—')}
+            </span>
+            <h2>Marca cada platillo listo</h2>
           </div>
 
-          <div className="detalle-box">
-            <div className="detalle-header">
-              <strong>{platillos.length} platillos</strong>
-              <span className={`comanda-badge ${isAllReady ? 'badge-ready' : ''}`}>
-                {isAllReady ? 'READY' : orderStatus}
-              </span>
+          {errorMsg && (
+            <div
+              className="alert-error"
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                padding: '0.6rem 0.9rem',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+              }}
+            >
+              {errorMsg}
             </div>
+          )}
 
-            {platillos.length === 0 ? (
-              <div className="empty-column-state">
-                No hay platillos cargados en esta comanda. Los elementos aparecerán aquí al seleccionar una comanda activa.
-              </div>
-            ) : (
-              <div className="platillos-list">
-                {platillos.map((p) => (
-                  <div key={p.id} className="platillo-row">
-                    <div className="platillo-info-left">
-                      <span className={`platillo-check ${p.isReady ? 'done' : ''}`}>✓</span>
-                      <span>
-                        {p.name} ×{p.quantity}
-                      </span>
+          {readyDishMessage && (
+            <div
+              className="alert-success"
+              style={{
+                background: '#ecfdf5',
+                color: '#065f46',
+                border: '1px solid #a7f3d0',
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                marginBottom: '1rem',
+                fontWeight: 600,
+              }}
+            >
+              {readyDishMessage}
+            </div>
+          )}
+
+          {loading && !comanda ? (
+            <div className="empty-menu-state">Cargando platillos de la comanda...</div>
+          ) : !comanda ? (
+            <div className="empty-menu-state">
+              No hay una comanda activa seleccionada en este momento.
+            </div>
+          ) : (
+            <>
+              <div className="order-items-list">
+                {comanda.items.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`order-item-row ${item.isReady ? 'item-selected' : ''}`}
+                  >
+                    <div className="dish-info-left">
+                      <div className={`status-dot ${item.isReady ? 'available' : ''}`} />
+                      <div>
+                        <h4 className="item-title">
+                          {item.dishName ?? item.name} ×{item.quantity}
+                        </h4>
+                        {item.note && <span className="item-sub">Nota: {item.note}</span>}
+                      </div>
                     </div>
-                    <div className="flex-gap-sm">
-                      <span className="platillo-status">{p.timeOrStatus}</span>
-                      {!p.isReady && (
+
+                    <div className="dish-action-right">
+                      {item.isReady ? (
+                        <span className="text-avail">
+                          ✓ Ya está listo{item.readyAt ? ` · ${item.readyAt}` : ''}
+                        </span>
+                      ) : (
                         <button
                           type="button"
-                          className="btn-cocina btn-primary btn-mini"
-                          disabled={submitting}
-                          onClick={() => markItemReady(p.id)}
+                          className="btn-secondary"
+                          disabled={updatingItemId === item.id}
+                          onClick={() => handleMarkItemReady(item)}
                         >
-                          Listo
+                          {updatingItemId === item.id ? 'Marcando...' : 'Listo'}
                         </button>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
-            )}
 
-            <div className="progress-section">
-              <div className="detalle-row">
-                <span>Progreso</span>
-                <strong>
-                  {totalListos} / {platillos.length} listos ({progresoPorcentaje}%)
-                </strong>
+              <div className="order-totals-row">
+                <div>
+                  <strong>Progreso</strong>
+                  <span className="items-selected-pill">
+                    {readyCount} / {totalCount} listos ({progressPercent}%)
+                  </span>
+                </div>
+                <span className="status-pill ready">{comanda.status}</span>
               </div>
-              <div className="progress-bar-bg">
-                <div className="progress-bar-fill" style={{ width: `${progresoPorcentaje}%` }}></div>
+
+              <div
+                className="form-actions"
+                style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}
+              >
+                {nextPendingItem && (
+                  <button
+                    type="button"
+                    className="btn-primary-green"
+                    disabled={Boolean(updatingItemId)}
+                    onClick={() => handleMarkItemReady(nextPendingItem)}
+                  >
+                    {updatingItemId ? 'Marcando...' : 'Marcar siguiente listo'}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => onNavigate('/kitchen')}
+                >
+                  Ver comandas
+                </button>
               </div>
-            </div>
-          </div>
-
-          <div className="kitchen-notice-box">
-            Cada ítem registra hora y responsable. Al terminar se avisa al mesero y al cliente.
-          </div>
-
-          <div className="detalle-actions">
-            <button
-              type="button"
-              className="btn-cocina btn-primary"
-              disabled={submitting || isAllReady || platillos.length === 0}
-              onClick={handleNextReady}
-            >
-              {submitting ? 'Guardando...' : 'Marcar siguiente listo'}
-            </button>
-
-            <button
-              type="button"
-              className="btn-cocina btn-secondary"
-              onClick={() => onNavigate('/kitchen')}
-            >
-              Ver comandas
-            </button>
-          </div>
+            </>
+          )}
         </div>
       </main>
     </div>
