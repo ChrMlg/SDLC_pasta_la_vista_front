@@ -4,7 +4,7 @@ import { SessionProfile } from './shared/api-client';
 import { LoginApp } from './modules/auth/LoginApp';
 import './app.css';
 
-// Módulo 1: Menú Digital y Catálogo
+// Módulo 1: Menú Digital y Catálogo (H1, H2, H3)
 import { GerenteMenuApp } from './modules/gerente/menu/GerenteMenuApp';
 import { NuevoPlatilloForm } from './modules/gerente/menu/NuevoPlatilloForm';
 import { ConfirmarDisponibilidad } from './modules/gerente/menu/ConfirmarDisponibilidad';
@@ -16,7 +16,7 @@ import { ClientePedidoApp } from './modules/cliente/order/ClientePedidoApp';
 import { RevisarPedidoApp } from './modules/cliente/order/RevisarPedidoApp';
 import { PedidoCreadoApp } from './modules/cliente/order/PedidoCreadoApp';
 
-// Módulo 3: Cocina y Entrega
+// Módulo 3: Cocina y Entrega (H6, H7, H8, H9)
 import { ComandasCocinaApp } from './modules/cocina/kitchen/ComandasCocinaApp';
 import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp';
 import { PlatillosComandaApp } from './modules/cocina/items/PlatillosComandaApp';
@@ -40,6 +40,8 @@ import { SucursalesAtencionApp } from './modules/gerente-general/reports/Sucursa
 
 import { CompanionApp } from './modules/companion/CompanionApp';
 import { isCompanionPath } from './modules/companion/companion-routes';
+// Placeholders de módulos del compañero (Módulos 4, 5, 6, 7, 8)
+import { CompanionModulePlaceholder } from './modules/companion-placeholders/CompanionModulePlaceholder';
 
 function getDefaultRouteForRole(role: SessionProfile['role']): string {
   switch (role) {
