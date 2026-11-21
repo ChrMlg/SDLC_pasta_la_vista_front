@@ -21,7 +21,7 @@ export type LoyaltyRedemption = {
   benefitId: string;
   pointsReserved: number;
   discountAmount: string;
-  status: 'PENDING';
+  status: 'PENDING' | 'RESERVED';
 };
 
 // SUPUESTO: confirmar con el backend de Lealtad
@@ -93,10 +93,37 @@ async function getRedeemScreenDataMock(signal?: AbortSignal): Promise<RedeemScre
 
 export async function getRedeemScreenData(signal?: AbortSignal): Promise<RedeemScreenData> {
   if (USE_LOYALTY_MOCK) return getRedeemScreenDataMock(signal);
-  return {
-    balance: await getLoyaltyBalance(signal),
-    benefits: { available: false, data: [] },
-  };
+  const [balance, benefitsResponse] = await Promise.all([
+    getLoyaltyBalance(signal),
+    fetch('/api/loyalty/benefits', { credentials: 'include', signal })
+      .then(async response => {
+        if (response.status === 403 || response.status === 404) return null;
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw {
+          code: (body as Partial<ApiError>)?.code ?? 'HTTP_ERROR',
+          message: (body as Partial<ApiError>)?.message ?? 'No se pudieron cargar los beneficios',
+          field: (body as Partial<ApiError>)?.field ?? null,
+          status: response.status,
+        } satisfies ApiError;
+        return body;
+      }),
+  ]);
+  const rows = Array.isArray(benefitsResponse)
+    ? benefitsResponse
+    : Array.isArray((benefitsResponse as { data?: unknown[] } | null)?.data)
+      ? (benefitsResponse as { data: Array<{ id: string; name: string; pointsRequired: number; discountValue: number; isActive?: boolean }> }).data
+      : [];
+  const benefits = rows
+    .filter(row => row.isActive !== false)
+    .map(row => ({
+      id: row.id,
+      name: row.name,
+      pointsRequired: row.pointsRequired,
+      discountAmount: Number(row.discountValue).toFixed(2),
+    }));
+  return benefitsResponse !== null
+    ? { balance, benefits: { available: true as const, data: benefits } }
+    : { balance, benefits: { available: false as const, data: [] } };
 }
 
 async function redeemMock(input: LoyaltyRedeemRequest, signal?: AbortSignal): Promise<LoyaltyRedemption> {
@@ -133,9 +160,22 @@ export function redeemLoyaltyBenefit(
   signal?: AbortSignal,
 ): Promise<LoyaltyRedemption> {
   if (USE_LOYALTY_MOCK) return redeemMock(input, signal);
-  return request<LoyaltyRedemption>('/api/loyalty/redeem', {
+  return request<{
+    redemptionId: string;
+    status: 'PENDING' | 'RESERVED';
+    points: number;
+    bill: { discount: number };
+    availableBalance: number;
+  }>('/api/loyalty/redeem', {
     method: 'POST',
     body: JSON.stringify(input),
     signal,
-  });
+  }).then(res => ({
+    id: res.redemptionId,
+    billId: input.billId,
+    benefitId: input.benefitId,
+    pointsReserved: res.points,
+    discountAmount: String(res.bill.discount),
+    status: res.status,
+  }));
 }

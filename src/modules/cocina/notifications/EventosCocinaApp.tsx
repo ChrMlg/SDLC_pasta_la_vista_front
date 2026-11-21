@@ -33,12 +33,12 @@ export function EventosCocinaApp({ onNavigate }: { onNavigate: (path: string) =>
         <div className="breadcrumb">
           Cocina / <strong>Eventos y avisos de Cocina</strong>
         </div>
-        <div className="branch-badge">H26 + H30 · KITCHEN</div>
+        <div className="branch-badge">Cocina</div>
       </header>
 
       <main className="notif-content">
         <div className="meta-info">
-          <span className="badge-h">H26 + H30 · KITCHEN</span>
+          <span className="badge-h">Eventos de cocina</span>
           <span className="route-tag">/kitchen/notifications</span>
         </div>
 
@@ -62,7 +62,7 @@ export function EventosCocinaApp({ onNavigate }: { onNavigate: (path: string) =>
                 className="btn-primary-green"
                 onClick={() => onNavigate('/kitchen')}
               >
-                Ir a comandas (H6) →
+                Ir a comandas →
               </button>
             </div>
           </div>
@@ -97,7 +97,7 @@ export function EventosCocinaApp({ onNavigate }: { onNavigate: (path: string) =>
           )}
 
           <div className="notif-readonly-note">
-            Los eventos se deduplican. Cocina no recibe avisos de entrega reservados para el mesero (H30).
+            Los eventos se deduplican. Cocina no recibe avisos de entrega reservados para el mesero.
           </div>
         </div>
       </main>

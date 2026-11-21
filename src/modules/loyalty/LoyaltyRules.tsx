@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import './loyalty-rules.css';
 import {
   createLoyaltyBenefit,
   saveLoyaltyRules,
+  getLoyaltyRules,
   type ApiError,
   type LoyaltyBenefit,
   type LoyaltyBenefitInput,
@@ -42,7 +43,7 @@ function formatDiscount(value: number): string {
 }
 
 export function LoyaltyRules({ role }: { role: string }) {
-  const [conversionRate, setConversionRate] = useState(USE_LOYALTY_MOCK ? '1' : '');
+  const [conversionRate, setConversionRate] = useState('');
   const [conversionRateError, setConversionRateError] = useState('');
   const [rulesError, setRulesError] = useState('');
   const [rulesSuccess, setRulesSuccess] = useState('');
@@ -58,6 +59,17 @@ export function LoyaltyRules({ role }: { role: string }) {
   const [benefitSuccess, setBenefitSuccess] = useState('');
   const [benefits, setBenefits] = useState<LoyaltyBenefit[]>([]);
   const [saving, setSaving] = useState<SavingAction>(null);
+
+  useEffect(() => {
+    if (role !== 'GENERAL_MANAGER') return;
+    const controller = new AbortController();
+    getLoyaltyRules(controller.signal).then(rules => {
+      if (!controller.signal.aborted) setConversionRate(rules ? String(rules.conversionRate) : '');
+    }).catch(cause => {
+      if (!controller.signal.aborted) setRulesError(requestErrorMessage(getApiError(cause).status));
+    });
+    return () => controller.abort();
+  }, [role]);
 
   if (role !== 'GENERAL_MANAGER') {
     return <main className="shell">
@@ -124,10 +136,11 @@ export function LoyaltyRules({ role }: { role: string }) {
     } catch (cause: unknown) {
       const apiError = getApiError(cause);
       if ((apiError.status === 400 || apiError.status === 422)
-        && apiError.message && ['name', 'pointsRequired', 'discountAmount'].includes(apiError.field ?? '')) {
+        && apiError.message && ['name', 'pointsRequired', 'discountAmount', 'discountValue'].includes(apiError.field ?? '')) {
+        const field = apiError.field === 'discountValue' ? 'discountAmount' : apiError.field;
         setBenefitErrors(current => ({
           ...current,
-          [apiError.field as 'name' | 'pointsRequired' | 'discountAmount']: apiError.message!,
+          [field as 'name' | 'pointsRequired' | 'discountAmount']: apiError.message!,
         }));
       } else {
         setBenefitError(requestErrorMessage(apiError.status));

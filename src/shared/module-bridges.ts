@@ -29,7 +29,7 @@ export async function fetchCustomerActiveTable(): Promise<ActiveTableSelection |
     if (!data?.tableId) return null;
     return {
       tableId: data.tableId,
-      tableNumber: data.tableNumber ?? data.table?.number,
+      tableNumber: data.tableNumber ?? data.number ?? data.table?.number,
       branchId: data.branchId,
       status: data.status ?? data.table?.status,
     };

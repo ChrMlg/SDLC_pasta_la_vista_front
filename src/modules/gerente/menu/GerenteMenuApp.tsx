@@ -138,7 +138,7 @@ export function GerenteMenuApp({ onNavigate, defaultBranchId }: GerenteMenuAppPr
                   <th>Categoría</th>
                   <th>Precio</th>
                   <th>Estado</th>
-                  <th>Acción (H2)</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody>

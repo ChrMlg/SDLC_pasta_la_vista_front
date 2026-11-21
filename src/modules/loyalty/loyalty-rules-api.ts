@@ -71,16 +71,41 @@ async function createLoyaltyBenefitMock(input: LoyaltyBenefitInput): Promise<Loy
 
 export function saveLoyaltyRules(rules: LoyaltyRules): Promise<LoyaltyRules> {
   if (USE_LOYALTY_MOCK) return saveLoyaltyRulesMock(rules);
-  return request<LoyaltyRules>('/api/management/loyalty/rules', {
+  const conversionRate = rules.conversionRate.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+  return request<{ conversionRate: number | string }>('/api/management/loyalty/rules', {
     method: 'PUT',
-    body: JSON.stringify(rules),
-  });
+    body: JSON.stringify({ conversionRate }),
+  }).then(res => ({ conversionRate: Number(res.conversionRate) }));
 }
 
 export function createLoyaltyBenefit(input: LoyaltyBenefitInput): Promise<LoyaltyBenefitResponse> {
   if (USE_LOYALTY_MOCK) return createLoyaltyBenefitMock(input);
   return request<LoyaltyBenefitResponse>('/api/management/loyalty/benefits', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      name: input.name,
+      pointsRequired: input.pointsRequired,
+      discountValue: input.discountAmount.toFixed(2),
+      isActive: true,
+    }),
   });
+}
+
+export async function getLoyaltyRules(signal?: AbortSignal): Promise<LoyaltyRules | null> {
+  if (USE_LOYALTY_MOCK) return null;
+  const response = await fetch('/api/management/loyalty/rules', {
+    credentials: 'include',
+    signal,
+  });
+  const body = await response.json().catch(() => null) as Partial<ApiError & { conversionRate: number | string }> | null;
+  if (response.status === 404 && body?.code === 'LOYALTY_RULE_NOT_FOUND') return null;
+  if (!response.ok) {
+    throw {
+      code: body?.code ?? 'HTTP_ERROR',
+      message: body?.message ?? 'No se pudo cargar la tasa de conversión',
+      field: body?.field ?? null,
+      status: response.status,
+    } satisfies ApiError;
+  }
+  return { conversionRate: Number(body?.conversionRate) };
 }
