@@ -1,0 +1,107 @@
+import { apiRequest, extractArray } from '../../../shared/api-client';
+
+export interface PublicMenuItem {
+  id: string;
+  branchId?: string;
+  name: string;
+  description?: string;
+  category: string;
+  price: number | string;
+  isAvailable: boolean;
+}
+
+export interface BranchTableOption {
+  id: string;
+  number: number | string;
+  label: string;
+  status?: string;
+}
+
+export interface CreateOrderPayload {
+  branchId: string;
+  serviceType: 'DINE_IN' | 'TAKEAWAY';
+  tableId?: string | null;
+  items: {
+    menuItemId: string;
+    quantity: number;
+    notes?: string;
+  }[];
+}
+
+export async function fetchAllWaiterMenuItems(branchId: string): Promise<PublicMenuItem[]> {
+  let allItems: PublicMenuItem[] = [];
+  let currentPage = 1;
+  let totalPages = 1;
+
+  while (currentPage <= totalPages && currentPage <= 25) {
+    const params = new URLSearchParams();
+    params.append('page', currentPage.toString());
+
+    const responseData = await apiRequest<any>(
+      `/branches/${branchId}/menu?${params.toString()}`
+    );
+
+    const pageItems = extractArray<PublicMenuItem>(responseData);
+    if (pageItems.length === 0) {
+      break;
+    }
+
+    const uniqueNew = pageItems.filter(
+      (item) => !allItems.some((existing) => existing.id === item.id)
+    );
+    allItems = [...allItems, ...uniqueNew];
+
+    if (
+      !Array.isArray(responseData) &&
+      typeof responseData?.total === 'number' &&
+      typeof responseData?.pageSize === 'number' &&
+      responseData.pageSize > 0
+    ) {
+      totalPages = Math.ceil(responseData.total / responseData.pageSize);
+    } else if (pageItems.length < 10) {
+      break;
+    }
+
+    currentPage++;
+  }
+
+  return allItems;
+}
+
+export async function fetchBranchTables(branchId: string): Promise<BranchTableOption[]> {
+  const data = await apiRequest<any>(`/branches/${branchId}/tables`);
+  const list = extractArray<any>(data);
+  return list.map((t: any, idx: number) => {
+    const num = t?.number ?? idx + 1;
+    const padded = String(num).padStart(2, '0');
+    return {
+      id: String(t.id),
+      number: num,
+      label: t?.name || `Mesa ${padded}`,
+      status: t?.status,
+    };
+  });
+}
+
+export async function createWaiterOrder(payload: CreateOrderPayload) {
+  const mappedItems = payload.items.map((item) => ({
+    dishId: item.menuItemId,
+    quantity: item.quantity,
+    ...(item.notes ? { notes: item.notes } : {}),
+  }));
+
+  const apiBody: Record<string, unknown> = {
+    branchId: payload.branchId,
+    type: payload.serviceType,
+    items: mappedItems,
+  };
+
+  if (payload.serviceType === 'DINE_IN' && payload.tableId) {
+    apiBody.tableId = payload.tableId;
+  }
+
+  return apiRequest('/orders', {
+    method: 'POST',
+    body: JSON.stringify(apiBody),
+  });
+}

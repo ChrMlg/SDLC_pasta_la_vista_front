@@ -1,0 +1,174 @@
+.mesero-track-container {
+  color: #1a2e22;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 4rem;
+}
+
+.mesero-track-header {
+  background: #ffffff;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mesero-track-content {
+  padding: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.mesero-track-content h1 {
+  margin: 0.25rem 0 0;
+  font-size: 1.75rem;
+  color: #0f172a;
+}
+
+.card-track-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.track-tabs-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1.25rem 0;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.85rem;
+}
+
+.track-tab-btn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.track-tab-btn.active {
+  background: #064e3b;
+  color: #ffffff;
+  border-color: #064e3b;
+}
+
+.empty-orders-box {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.order-track-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1rem 1.15rem;
+  margin-bottom: 0.9rem;
+}
+
+.order-track-top,
+.order-track-bottom,
+.step-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.status-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.status-pill.ready {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.status-pill.delivery {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.alert-rule-banner {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 3px solid #f59e0b;
+  color: #92400e;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.delivery-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.delivery-step-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem 1.15rem;
+  background: #ffffff;
+}
+
+.delivery-step-card.step-done {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+
+.step-card-title {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.step-card-desc {
+  margin: 0.35rem 0 0;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.step-action-row {
+  margin-top: 0.75rem;
+}
+
+.footer-rule-text {
+  margin-top: 1.25rem;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.track-footer-actions {
+  margin-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
