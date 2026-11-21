@@ -62,7 +62,7 @@ export function ComandasCocinaApp({ onNavigate, defaultBranchId }: ComandasCocin
 
       <main className="cocina-content">
         <div className="meta-info">
-          <span className="badge-h">H6 + H30 · KITCHEN</span>
+          <span className="badge-h">Cocina</span>
           <span className="route-tag">/kitchen</span>
         </div>
 
@@ -100,7 +100,7 @@ export function ComandasCocinaApp({ onNavigate, defaultBranchId }: ComandasCocin
                 className="btn-secondary"
                 onClick={() => onNavigate('/kitchen/notifications')}
               >
-                Avisos (H30)
+                Avisos
               </button>
             </div>
           </div>
@@ -163,7 +163,7 @@ export function ComandasCocinaApp({ onNavigate, defaultBranchId }: ComandasCocin
                           ))}
                         </ul>
                         <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.4rem' }}>
-                          Clic para tomar comanda (H7) →
+                          Clic para tomar comanda →
                         </div>
                       </div>
                     );
@@ -213,7 +213,7 @@ export function ComandasCocinaApp({ onNavigate, defaultBranchId }: ComandasCocin
                           ))}
                         </ul>
                         <div style={{ fontSize: '0.78rem', color: '#047857', marginTop: '0.4rem' }}>
-                          Clic para marcar platillos listos (H8) →
+                          Clic para marcar platillos listos →
                         </div>
                       </div>
                     );

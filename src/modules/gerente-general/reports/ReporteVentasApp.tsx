@@ -48,12 +48,12 @@ export function ReporteVentasApp({
         <div className="breadcrumb">
           Gerencia general / <strong>Reporte de ventas por sucursal</strong>
         </div>
-        <div className="branch-badge">GENERAL_MANAGER · H31</div>
+        <div className="branch-badge">Gerencia general</div>
       </header>
 
       <main className="report-content">
         <div className="meta-info">
-          <span className="badge-h">H31 · GENERAL_MANAGER</span>
+          <span className="badge-h">Reporte de ventas</span>
           <span className="route-tag">/reports/sales</span>
         </div>
 
@@ -132,7 +132,7 @@ export function ReporteVentasApp({
               className="btn-primary-green"
               onClick={() => onNavigate('/reports/comparison')}
             >
-              Comparar sucursales (H32) →
+              Comparar sucursales →
             </button>
           </div>
 

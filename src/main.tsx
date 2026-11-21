@@ -2,20 +2,21 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { SessionProfile } from './shared/api-client';
 import { LoginApp } from './modules/auth/LoginApp';
+import './app.css';
 
-// Módulo 1: Menú Digital y Catálogo (H1, H2, H3)
+// Módulo 1: Menú Digital y Catálogo
 import { GerenteMenuApp } from './modules/gerente/menu/GerenteMenuApp';
 import { NuevoPlatilloForm } from './modules/gerente/menu/NuevoPlatilloForm';
 import { ConfirmarDisponibilidad } from './modules/gerente/menu/ConfirmarDisponibilidad';
 import { ClienteMenuApp } from './modules/cliente/menu/ClienteMenuApp';
 
-// Módulo 2: Pedidos (H4, H5)
+// Módulo 2: Pedidos
 import { MeseroNuevoPedidoApp } from './modules/mesero/order/MeseroNuevoPedidoApp';
 import { ClientePedidoApp } from './modules/cliente/order/ClientePedidoApp';
 import { RevisarPedidoApp } from './modules/cliente/order/RevisarPedidoApp';
 import { PedidoCreadoApp } from './modules/cliente/order/PedidoCreadoApp';
 
-// Módulo 3: Cocina y Entrega (H6, H7, H8, H9)
+// Módulo 3: Cocina y Entrega
 import { ComandasCocinaApp } from './modules/cocina/kitchen/ComandasCocinaApp';
 import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp';
 import { PlatillosComandaApp } from './modules/cocina/items/PlatillosComandaApp';
@@ -25,12 +26,12 @@ import {
 } from './modules/mesero/tracking/PedidosAvisosMeseroApp';
 import { RetirarEntregaApp } from './modules/mesero/tracking/RetirarEntregaApp';
 
-// Módulo 9: Notificaciones (H26 - H30)
+// Módulo 9: Notificaciones
 import { ClienteNotificacionesApp } from './modules/cliente/notifications/ClienteNotificacionesApp';
 import { MeseroNotificacionesApp } from './modules/mesero/notifications/MeseroNotificacionesApp';
 import { EventosCocinaApp } from './modules/cocina/notifications/EventosCocinaApp';
 
-// Módulo 10: Analíticas y Reportes (H31 - H35)
+// Módulo 10: Analíticas y Reportes
 import { ReporteVentasApp } from './modules/gerente-general/reports/ReporteVentasApp';
 import { ComparativaSucursalesApp } from './modules/gerente-general/reports/ComparativaSucursalesApp';
 import { PlatillosMasVendidosApp } from './modules/gerente-general/reports/PlatillosMasVendidosApp';
@@ -96,27 +97,32 @@ function AppShell() {
   const role = session.role;
 
   const navButtonStyle = (active: boolean): React.CSSProperties => ({
-    background: active ? '#064e3b' : 'transparent',
-    border: '1px solid #334155',
+    background: active ? 'linear-gradient(135deg, #17684a, #0f5138)' : 'transparent',
+    border: `1px solid ${active ? '#2d7a5b' : '#3c4b61'}`,
     color: '#ffffff',
-    padding: '0.3rem 0.7rem',
-    borderRadius: '4px',
+    padding: '0.48rem 0.78rem',
+    borderRadius: '999px',
     cursor: 'pointer',
-    fontSize: '0.8rem',
+    fontSize: '0.82rem',
+    fontWeight: 650,
+    letterSpacing: '0.01em',
+    boxShadow: active ? '0 4px 12px rgba(52, 211, 153, 0.14)' : 'none',
   });
 
   return (
     <div>
       <nav
         style={{
-          background: '#0f172a',
+          background: 'linear-gradient(135deg, #10291d, #0f172a)',
           color: '#ffffff',
-          padding: '0.65rem 1.5rem',
+          padding: '0.75rem 1.5rem',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: '0.75rem',
           flexWrap: 'wrap',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.16)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
         <div style={{ display: 'flex', gap: '0.55rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -131,14 +137,14 @@ function AppShell() {
                 style={navButtonStyle(currentPath === '/management/menu')}
                 onClick={() => handleNavigate('/management/menu')}
               >
-                Menú sucursal (H1 + H2)
+                Menú sucursal
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/management/menu/new')}
                 onClick={() => handleNavigate('/management/menu/new')}
               >
-                + Nuevo platillo (H1)
+                Nuevo platillo
               </button>
               <button
                 type="button"
@@ -163,21 +169,21 @@ function AppShell() {
                 style={navButtonStyle(currentPath === '/waiter/orders/new')}
                 onClick={() => handleNavigate('/waiter/orders/new')}
               >
-                Tomar pedido (H4)
+                Tomar pedido
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/waiter/orders')}
                 onClick={() => handleNavigate('/waiter/orders')}
               >
-                Seguimiento / Entrega (H9)
+                Seguimiento / Entrega
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/notifications')}
                 onClick={() => handleNavigate('/notifications')}
               >
-                Notificaciones (H27 + H29)
+                Notificaciones
               </button>
               <button
                 type="button"
@@ -198,7 +204,7 @@ function AppShell() {
                 style={navButtonStyle(currentPath === '/branches/menu')}
                 onClick={() => handleNavigate('/branches/menu')}
               >
-                Ver menú (H3)
+                Ver menú
               </button>
               <button
                 type="button"
@@ -209,14 +215,14 @@ function AppShell() {
                 )}
                 onClick={() => handleNavigate('/orders/new')}
               >
-                Pedido autoservicio (H5)
+                Pedido autoservicio
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/notifications')}
                 onClick={() => handleNavigate('/notifications')}
               >
-                Notificaciones (H27 + H28)
+                Notificaciones
               </button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/seating')}
                 onClick={() => handleNavigate('/seating')}>Mesa (Mód. 4)</button>
@@ -240,28 +246,28 @@ function AppShell() {
                 style={navButtonStyle(currentPath === '/kitchen')}
                 onClick={() => handleNavigate('/kitchen')}
               >
-                Comandas (H6)
+                Comandas
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/kitchen/detail')}
                 onClick={() => handleNavigate('/kitchen/detail')}
               >
-                Tomar / Liberar (H7)
+                Tomar / Liberar
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/kitchen/items')}
                 onClick={() => handleNavigate('/kitchen/items')}
               >
-                Platillos listos (H8)
+                Platillos listos
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/kitchen/notifications')}
                 onClick={() => handleNavigate('/kitchen/notifications')}
               >
-                Avisos Cocina (H26 + H30)
+                Avisos de cocina
               </button>
             </>
           )}
@@ -273,35 +279,35 @@ function AppShell() {
                 style={navButtonStyle(currentPath === '/reports/sales')}
                 onClick={() => handleNavigate('/reports/sales')}
               >
-                H31: Ventas
+                Ventas
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/reports/comparison')}
                 onClick={() => handleNavigate('/reports/comparison')}
               >
-                H32: Comparativa
+                Comparativa
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/reports/top-dishes')}
                 onClick={() => handleNavigate('/reports/top-dishes')}
               >
-                H33: Top platillos
+                Top platillos
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/reports/peak-hours')}
                 onClick={() => handleNavigate('/reports/peak-hours')}
               >
-                H34: Horarios
+                Horarios
               </button>
               <button
                 type="button"
                 style={navButtonStyle(currentPath === '/reports/performance')}
                 onClick={() => handleNavigate('/reports/performance')}
               >
-                H35: Atención
+                Atención
               </button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/reservations')}
                 onClick={() => handleNavigate('/management/reservations')}>Reservaciones</button>

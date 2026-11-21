@@ -46,12 +46,12 @@ export function SucursalesAtencionApp() {
         <div className="breadcrumb">
           Gerencia general / <strong>Sucursales que requieren atención</strong>
         </div>
-        <div className="branch-badge">GENERAL_MANAGER · H35</div>
+        <div className="branch-badge">Gerencia general</div>
       </header>
 
       <main className="report-content">
         <div className="meta-info">
-          <span className="badge-h">H35 · GENERAL_MANAGER</span>
+          <span className="badge-h">Atención por sucursal</span>
           <span className="route-tag">/reports/performance</span>
         </div>
 
