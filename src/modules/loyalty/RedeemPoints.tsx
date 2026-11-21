@@ -26,8 +26,11 @@ function redeemErrorMessage(error: unknown): string {
   const { status, code } = apiError(error);
   if (status === 401) return 'Inicie sesión para continuar.';
   if (status === 403) return 'No tiene permiso para ver esta pantalla.';
-  if (status === 409 && code === 'INSUFFICIENT_POINTS')
+  if (status === 400 && code === 'INSUFFICIENT_POINTS')
     return 'No tienes puntos suficientes para este beneficio.';
+  if (code === 'REDEMPTION_ALREADY_EXISTS') return 'Esta cuenta ya tiene un beneficio canjeado.';
+  if (status === 422 && code === 'REDEMPTION_TOTAL_TOO_LOW') return 'El descuento no puede superar el total de la cuenta.';
+  if (status === 409 && code === 'PAYMENT_IN_PROGRESS') return 'Ya hay un pago en proceso.';
   if (status === 409 && code === 'BILL_NOT_OPEN')
     return 'Esta cuenta ya no admite beneficios.';
   if (status === 404) return 'No se encontró la cuenta.';

@@ -113,6 +113,10 @@ function CustomerLoyalty() {
     {!error && balance && <section className="loyaltyBalance" aria-labelledby="loyalty-balance-title">
       <span id="loyalty-balance-title">Saldo disponible</span>
       <p><strong>{formatNumber(balance.points)}</strong> puntos</p>
+      {(balance.reservedPoints ?? 0) > 0 && <p>
+        Reservados: <strong>{formatNumber(balance.reservedPoints ?? 0)}</strong>
+        {' · '}Disponibles: <strong>{formatNumber(balance.availableBalance ?? balance.points)}</strong>
+      </p>}
     </section>}
 
     {!error && !loading && history && <>

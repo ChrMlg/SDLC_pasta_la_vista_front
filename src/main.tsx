@@ -37,8 +37,8 @@ import { PlatillosMasVendidosApp } from './modules/gerente-general/reports/Plati
 import { HorariosDemandaApp } from './modules/gerente-general/reports/HorariosDemandaApp';
 import { SucursalesAtencionApp } from './modules/gerente-general/reports/SucursalesAtencionApp';
 
-// Placeholders de módulos del compañero (Módulos 4, 5, 6, 7, 8)
-import { CompanionModulePlaceholder } from './modules/companion-placeholders/CompanionModulePlaceholder';
+import { CompanionApp } from './modules/companion/CompanionApp';
+import { isCompanionPath } from './modules/companion/companion-routes';
 
 function getDefaultRouteForRole(role: SessionProfile['role']): string {
   switch (role) {
@@ -61,6 +61,7 @@ function AppShell() {
   const [session, setSession] = useState<SessionProfile | null>(null);
   const [currentPath, setCurrentPath] = useState('/management/menu');
   const [routeParams, setRouteParams] = useState<any>(null);
+  const [navNonce, setNavNonce] = useState(0);
   const [selectedWaiterOrder, setSelectedWaiterOrder] =
     useState<WaiterOrderNotification | null>(null);
 
@@ -70,6 +71,7 @@ function AppShell() {
   };
 
   const handleNavigate = (path: string, params?: any) => {
+    setNavNonce(n => n + 1);
     if (params !== undefined) {
       setRouteParams(params);
       if (path.includes('/waiter/orders/deliver')) {
@@ -145,6 +147,12 @@ function AppShell() {
               >
                 Inventario (Mód. 7)
               </button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/reservations')}
+                onClick={() => handleNavigate('/management/reservations')}>Reservaciones (Mód. 5)</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/ratings')}
+                onClick={() => handleNavigate('/management/ratings')}>Calificaciones (Mód. 8)</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reviews')}
+                onClick={() => handleNavigate('/reviews')}>Reseñas</button>
             </>
           )}
 
@@ -173,11 +181,13 @@ function AppShell() {
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath.startsWith('/checkout'))}
-                onClick={() => handleNavigate('/checkout')}
+                style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/waiter/billing')}
+                onClick={() => handleNavigate('/waiter/billing')}
               >
                 Cuentas / Cobro (Mód. 6)
               </button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reviews')}
+                onClick={() => handleNavigate('/reviews')}>Reseñas (Mód. 8)</button>
             </>
           )}
 
@@ -208,13 +218,18 @@ function AppShell() {
               >
                 Notificaciones (H27 + H28)
               </button>
-              <button
-                type="button"
-                style={navButtonStyle(currentPath === '/seating')}
-                onClick={() => handleNavigate('/seating')}
-              >
-                Mesas / Reservas (Mód. 4-5)
-              </button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/seating')}
+                onClick={() => handleNavigate('/seating')}>Mesa (Mód. 4)</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reservations')}
+                onClick={() => handleNavigate('/reservations')}>Reservar (Mód. 5)</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-reservations')}
+                onClick={() => handleNavigate('/my-reservations')}>Mis reservas</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-receipts')}
+                onClick={() => handleNavigate('/my-receipts')}>Comprobantes (Mód. 6)</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-reviews')}
+                onClick={() => handleNavigate('/my-reviews')}>Calificar (Mód. 8)</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-loyalty')}
+                onClick={() => handleNavigate('/my-loyalty')}>Mis puntos</button>
             </>
           )}
 
@@ -288,6 +303,16 @@ function AppShell() {
               >
                 H35: Atención
               </button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/reservations')}
+                onClick={() => handleNavigate('/management/reservations')}>Reservaciones</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/inventory')}
+                onClick={() => handleNavigate('/management/inventory')}>Inventario</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/ratings')}
+                onClick={() => handleNavigate('/management/ratings')}>Calificaciones</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reviews')}
+                onClick={() => handleNavigate('/reviews')}>Reseñas</button>
+              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/loyalty')}
+                onClick={() => handleNavigate('/management/loyalty')}>Lealtad</button>
             </>
           )}
         </div>
@@ -334,14 +359,6 @@ function AppShell() {
               onNavigate={handleNavigate}
             />
           )}
-          {currentPath === '/management/inventory' && (
-            <CompanionModulePlaceholder
-              title="Inventario por sucursal"
-              moduleLabel="MÓDULO 7 · COMPAÑERO"
-              endpointHint="GET /api/management/branches/:branchId/inventory"
-              onBack={() => handleNavigate('/management/menu')}
-            />
-          )}
         </>
       )}
 
@@ -364,19 +381,13 @@ function AppShell() {
             currentPath === '/waiter/orders/deliver') && (
             <RetirarEntregaApp
               onNavigate={handleNavigate}
-              selectedOrder={selectedWaiterOrder}
+              selectedOrder={selectedWaiterOrder
+                ? { ...selectedWaiterOrder, type: selectedWaiterOrder.type ?? 'TAKEAWAY' }
+                : null}
             />
           )}
           {currentPath === '/notifications' && (
             <MeseroNotificacionesApp onNavigate={handleNavigate} />
-          )}
-          {currentPath.startsWith('/checkout') && (
-            <CompanionModulePlaceholder
-              title="Facturación y cobro de cuentas"
-              moduleLabel="MÓDULO 6 · COMPAÑERO"
-              endpointHint="POST /api/branches/:branchId/bills & POST /api/bills/:billId/payments"
-              onBack={() => handleNavigate('/waiter/orders/new')}
-            />
           )}
         </>
       )}
@@ -398,14 +409,6 @@ function AppShell() {
           )}
           {currentPath === '/notifications' && (
             <ClienteNotificacionesApp onNavigate={handleNavigate} />
-          )}
-          {(currentPath === '/seating' || currentPath.startsWith('/checkout')) && (
-            <CompanionModulePlaceholder
-              title="Selección de mesa, reservaciones y pagos"
-              moduleLabel="MÓDULOS 4, 5 y 6 · COMPAÑERO"
-              endpointHint="POST /api/branches/:branchId/tables/:tableId/select & POST /api/bills/:billId/payments"
-              onBack={() => handleNavigate('/orders/new')}
-            />
           )}
         </>
       )}
@@ -431,7 +434,6 @@ function AppShell() {
             <PlatillosComandaApp
               branchId={routeParams?.branchId || session.branchId || undefined}
               orderId={routeParams?.orderId}
-              initial={routeParams?.order}
               onNavigate={handleNavigate}
             />
           )}
@@ -454,6 +456,15 @@ function AppShell() {
           {currentPath === '/reports/peak-hours' && <HorariosDemandaApp />}
           {currentPath === '/reports/performance' && <SucursalesAtencionApp />}
         </>
+      )}
+      {isCompanionPath(currentPath) && (
+        <CompanionApp
+          key={`${currentPath}#${navNonce}`}
+          session={session}
+          path={currentPath}
+          routeParams={routeParams}
+          onNavigate={handleNavigate}
+        />
       )}
     </div>
   );
