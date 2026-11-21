@@ -84,7 +84,7 @@ export async function assignCustomerTable(branchId: string, tableId: string): Pr
 }
 
 /**
- * Envía el pedido por autoservicio (H5):
+ * Envía el pedido por autoservicio:
  * Intenta POST /api/orders/customer y si la instancia usa POST /api/orders, aplica fallback limpio.
  */
 export async function createCustomerOrder(payload: CreateCustomerOrderPayload) {

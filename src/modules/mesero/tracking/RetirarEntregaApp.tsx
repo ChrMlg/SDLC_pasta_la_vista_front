@@ -72,7 +72,7 @@ export function RetirarEntregaApp({ onNavigate, selectedOrder }: RetirarEntregaP
 
       <main className="mesero-track-content">
         <div className="meta-info">
-          <span className="badge-h">H9 · WAITER</span>
+          <span className="badge-h">Entregas</span>
           <span className="route-tag">/waiter/orders/:id/delivery</span>
         </div>
 

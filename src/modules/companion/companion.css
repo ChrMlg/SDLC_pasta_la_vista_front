@@ -1,0 +1,22 @@
+.companion-root {
+  min-height: 100%;
+  background: #f6f5f0;
+  color: #20342c;
+}
+.companion-root .shell {
+  max-width: 1160px;
+  margin: auto;
+  padding: 2.5rem 1.5rem;
+}
+.companion-root .error {
+  color: #9d2f2f;
+  background: #fff0ed;
+  border: 1px solid #f2c6bd;
+  padding: .9rem 1rem;
+  border-radius: 12px;
+}
+@media (max-width: 650px) {
+  .companion-root .shell {
+    padding: 1.5rem 1rem;
+  }
+}

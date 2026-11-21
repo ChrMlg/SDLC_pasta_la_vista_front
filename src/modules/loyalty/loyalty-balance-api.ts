@@ -10,6 +10,8 @@ export type ApiError = {
 // SUPUESTO: confirmar con el backend de Lealtad
 export type LoyaltyBalance = {
   points: number;
+  reservedPoints?: number;
+  availableBalance?: number;
 };
 
 // SUPUESTO: confirmar con el backend de Lealtad
@@ -96,13 +98,46 @@ async function getHistoryMock(page: number, signal?: AbortSignal): Promise<Loyal
 }
 
 export function getLoyaltyBalance(signal?: AbortSignal): Promise<LoyaltyBalance> {
-  return USE_LOYALTY_MOCK
-    ? getBalanceMock(signal)
-    : request<LoyaltyBalance>('/api/me/loyalty/balance', signal);
+  if (USE_LOYALTY_MOCK) return getBalanceMock(signal);
+  return request<{ balance: number; reservedPoints: number; availableBalance: number }>(
+    '/api/me/loyalty/balance',
+    signal,
+  ).then(data => ({
+    points: data.balance,
+    reservedPoints: data.reservedPoints,
+    availableBalance: data.availableBalance,
+  }));
 }
 
 export function getLoyaltyHistory(page: number, signal?: AbortSignal): Promise<LoyaltyHistory> {
   if (USE_LOYALTY_MOCK) return getHistoryMock(page, signal);
-  const query = new URLSearchParams({ page: String(page), pageSize: '10' });
-  return request<LoyaltyHistory>(`/api/me/loyalty/history?${query}`, signal);
+  const query = new URLSearchParams({ page: String(page) });
+  return request<{
+    data: Array<{
+      id: string;
+      type: 'EARN' | 'REDEEM';
+      points: number;
+      createdAt: string;
+      orderId: string | null;
+      paymentId: string | null;
+      redemptionId: string | null;
+      benefitName?: string;
+    }>;
+    total: number;
+    page: number;
+    pageSize: number;
+  }>(`/api/me/loyalty/history?${query}`, signal).then(result => ({
+    data: result.data.map(row => ({
+      id: row.id,
+      type: row.type === 'EARN' ? 'EARNED' : 'REDEEMED',
+      points: row.type === 'REDEEM' ? -Math.abs(row.points) : Math.abs(row.points),
+      description: row.type === 'REDEEM'
+        ? `Canje: ${row.benefitName ?? 'beneficio'}`
+        : 'Puntos por compra',
+      createdAt: row.createdAt,
+    })),
+    total: result.total,
+    page: result.page,
+    pageSize: result.pageSize,
+  }));
 }
