@@ -207,7 +207,7 @@ export function WaiterBilling({ session }: { session: MenuSession }) {
   }
 
   return <main className="shell billingPage">
-    <p className="eyebrow">MÓDULO 6 · MESERO</p>
+    <p className="eyebrow">CUENTAS · MESERO</p>
     <h1>Cerrar cuenta</h1>
     <section className="billingCard">
       <label className="billingSelectLabel">Seleccionar mesa ocupada
@@ -258,7 +258,7 @@ export function WaiterBillDetail({ session }: { session: MenuSession }) {
   if (session.role !== 'WAITER' || !session.branchId) return <main className="shell"><p role="alert">No tienes permiso para consultar esta cuenta</p></main>;
 
   return <main className="shell billingPage">
-    <p className="eyebrow">MÓDULO 6 · MESERO</p>
+    <p className="eyebrow">CUENTAS · MESERO</p>
     <h1>{tableNumber !== undefined ? `Cuenta de la mesa ${tableNumber}` : 'Cuenta'}</h1>
     {loading && <p role="status">Cargando cuenta...</p>}
     {error && <p role="alert" className="error">{error}</p>}
@@ -349,7 +349,7 @@ export function ReceiptList() {
 
   const pageCount = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
   return <main className="shell billingPage">
-    <p className="eyebrow">MÓDULO 6 · CLIENTE</p>
+    <p className="eyebrow">COMPROBANTES · CLIENTE</p>
     <h1>Mis comprobantes</h1>
     {loading && <p role="status">Cargando comprobantes...</p>}
     {error && <p role="alert" className="error">{error}</p>}
@@ -392,7 +392,7 @@ export function ReceiptDetail({ mine }: { mine: boolean }) {
   }, [path, mine]);
 
   return <main className="shell billingPage">
-    <p className="eyebrow">MÓDULO 6</p>
+    <p className="eyebrow">COMPROBANTE</p>
     <h1>Comprobante</h1>
     {loading && <p role="status">Cargando comprobante...</p>}
     {error && <p role="alert" className="error">{error}</p>}

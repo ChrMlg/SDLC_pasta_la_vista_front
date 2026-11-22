@@ -7,10 +7,12 @@ type Branch = { id: string; code: string; name: string };
 type Table = { id: string; number: number; status: string; mine: boolean };
 type ActiveSeat = CurrentSeat;
 
-async function get<T>(path: string): Promise<T> {
+async function get<T>(path: string): Promise<T | null> {
   const response = await fetch(path, { credentials: 'include' });
   if (!response.ok) throw new Error('No se pudieron cargar las opciones');
-  return response.json() as Promise<T>;
+  if (response.status === 204) return null;
+  const text = await response.text();
+  return text.trim() ? JSON.parse(text) as T : null;
 }
 
 export function CustomerJourney() {
@@ -32,7 +34,7 @@ export function CustomerJourney() {
 
   useEffect(() => {
     let active = true; setLoadingBranches(true); setError('');
-    get<Branch[]>('/api/branches').then(data => { if (active) setBranches(data); })
+    get<Branch[]>('/api/branches').then(data => { if (active) setBranches(data ?? []); })
       .catch(err => { if (active) setError(err.message); })
       .finally(() => { if (active) setLoadingBranches(false); });
     return () => { active = false; };
@@ -54,7 +56,7 @@ export function CustomerJourney() {
     if (!branchId) return;
     let active = true; setLoadingTables(true); setError('');
     get<Table[]>(`/api/branches/${encodeURIComponent(branchId)}/tables`)
-      .then(data => { if (active) setTables(data); })
+      .then(data => { if (active) setTables(data ?? []); })
       .catch(err => { if (active) setError(err.message); })
       .finally(() => { if (active) setLoadingTables(false); });
     return () => { active = false; };
@@ -83,7 +85,7 @@ export function CustomerJourney() {
       navigate(`/?branchId=${encodeURIComponent(branchId)}&tableId=${encodeURIComponent(table.id)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo elegir la mesa');
-      get<Table[]>(`/api/branches/${encodeURIComponent(branchId)}/tables`).then(setTables).catch(() => {});
+      get<Table[]>(`/api/branches/${encodeURIComponent(branchId)}/tables`).then(data => setTables(data ?? [])).catch(() => {});
       get<ActiveSeat | null>('/api/me/table-selection').then(setActiveSeat).catch(() => {});
     } finally { setBusy(null); }
   }

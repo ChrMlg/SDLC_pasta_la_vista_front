@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { SessionProfile } from './shared/api-client';
+import { SessionProfile, syncBranchesFromApi } from './shared/api-client';
 import { LoginApp } from './modules/auth/LoginApp';
 import './app.css';
 
-// Módulo 1: Menú Digital y Catálogo (H1, H2, H3)
 import { GerenteMenuApp } from './modules/gerente/menu/GerenteMenuApp';
 import { NuevoPlatilloForm } from './modules/gerente/menu/NuevoPlatilloForm';
 import { ConfirmarDisponibilidad } from './modules/gerente/menu/ConfirmarDisponibilidad';
@@ -16,7 +15,6 @@ import { ClientePedidoApp } from './modules/cliente/order/ClientePedidoApp';
 import { RevisarPedidoApp } from './modules/cliente/order/RevisarPedidoApp';
 import { PedidoCreadoApp } from './modules/cliente/order/PedidoCreadoApp';
 
-// Módulo 3: Cocina y Entrega (H6, H7, H8, H9)
 import { ComandasCocinaApp } from './modules/cocina/kitchen/ComandasCocinaApp';
 import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp';
 import { PlatillosComandaApp } from './modules/cocina/items/PlatillosComandaApp';
@@ -40,8 +38,6 @@ import { SucursalesAtencionApp } from './modules/gerente-general/reports/Sucursa
 
 import { CompanionApp } from './modules/companion/CompanionApp';
 import { isCompanionPath } from './modules/companion/companion-routes';
-// Placeholders de módulos del compañero (Módulos 4, 5, 6, 7, 8)
-import { CompanionModulePlaceholder } from './modules/companion-placeholders/CompanionModulePlaceholder';
 
 function getDefaultRouteForRole(role: SessionProfile['role']): string {
   switch (role) {
@@ -68,7 +64,8 @@ function AppShell() {
   const [selectedWaiterOrder, setSelectedWaiterOrder] =
     useState<WaiterOrderNotification | null>(null);
 
-  const handleLoginSuccess = (profile: SessionProfile) => {
+  const handleLoginSuccess = async (profile: SessionProfile) => {
+    await syncBranchesFromApi();
     setSession(profile);
     setCurrentPath(getDefaultRouteForRole(profile.role));
   };
@@ -153,12 +150,12 @@ function AppShell() {
                 style={navButtonStyle(currentPath === '/management/inventory')}
                 onClick={() => handleNavigate('/management/inventory')}
               >
-                Inventario (Mód. 7)
+                Inventario
               </button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/reservations')}
-                onClick={() => handleNavigate('/management/reservations')}>Reservaciones (Mód. 5)</button>
+                onClick={() => handleNavigate('/management/reservations')}>Reservaciones</button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/ratings')}
-                onClick={() => handleNavigate('/management/ratings')}>Calificaciones (Mód. 8)</button>
+                onClick={() => handleNavigate('/management/ratings')}>Calificaciones</button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reviews')}
                 onClick={() => handleNavigate('/reviews')}>Reseñas</button>
             </>
@@ -192,10 +189,10 @@ function AppShell() {
                 style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/waiter/billing')}
                 onClick={() => handleNavigate('/waiter/billing')}
               >
-                Cuentas / Cobro (Mód. 6)
+                Cuentas / Cobro
               </button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reviews')}
-                onClick={() => handleNavigate('/reviews')}>Reseñas (Mód. 8)</button>
+                onClick={() => handleNavigate('/reviews')}>Reseñas</button>
             </>
           )}
 
@@ -227,15 +224,15 @@ function AppShell() {
                 Notificaciones
               </button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/seating')}
-                onClick={() => handleNavigate('/seating')}>Mesa (Mód. 4)</button>
+                onClick={() => handleNavigate('/seating')}>Mesa</button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reservations')}
-                onClick={() => handleNavigate('/reservations')}>Reservar (Mód. 5)</button>
+                onClick={() => handleNavigate('/reservations')}>Reservar</button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-reservations')}
                 onClick={() => handleNavigate('/my-reservations')}>Mis reservas</button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-receipts')}
-                onClick={() => handleNavigate('/my-receipts')}>Comprobantes (Mód. 6)</button>
+                onClick={() => handleNavigate('/my-receipts')}>Comprobantes</button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-reviews')}
-                onClick={() => handleNavigate('/my-reviews')}>Calificar (Mód. 8)</button>
+                onClick={() => handleNavigate('/my-reviews')}>Calificar</button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-loyalty')}
                 onClick={() => handleNavigate('/my-loyalty')}>Mis puntos</button>
             </>

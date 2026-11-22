@@ -8,6 +8,9 @@ import {
 } from './mesero-order-api';
 import './mesero-order.css';
 
+// TODO: Configure only after the backend's orderable table statuses are confirmed.
+const ORDERABLE_TABLE_STATUSES: readonly string[] | null = null;
+
 interface OrderItem {
   id: string;
   name: string;
@@ -65,8 +68,11 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
       );
 
       setTables(branchTables);
-      if (branchTables.length > 0) {
-        setSelectedTableId(branchTables[0].id);
+      const firstOrderableTable = ORDERABLE_TABLE_STATUSES
+        ? branchTables.find((table) => ORDERABLE_TABLE_STATUSES.includes(table.status ?? ''))
+        : branchTables[0];
+      if (firstOrderableTable) {
+        setSelectedTableId(firstOrderableTable.id);
       }
     } catch (err: any) {
       setItems([]);
@@ -250,8 +256,13 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
                     <option value="">Sin mesas disponibles</option>
                   ) : (
                     tables.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.label}
+                      <option
+                        key={t.id}
+                        value={t.id}
+                        disabled={ORDERABLE_TABLE_STATUSES !== null
+                          && !ORDERABLE_TABLE_STATUSES.includes(t.status ?? '')}
+                      >
+                        {t.label} · {t.status ?? 'Estado desconocido'}
                       </option>
                     ))
                   )}

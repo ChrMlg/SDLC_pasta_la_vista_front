@@ -19,7 +19,31 @@ export const BRANCH_MAP: Record<string, string> = {
   Ramblas: 'a3333333-3333-4333-8333-333333333333',
 };
 
-export const DEFAULT_BRANCH_ID = 'a1111111-1111-4111-8111-111111111111';
+export let DEFAULT_BRANCH_ID = 'a1111111-1111-4111-8111-111111111111';
+
+export async function syncBranchesFromApi(): Promise<void> {
+  try {
+    const branches = extractArray<any>(await apiRequest('/branches'))
+      .filter((branch) => branch?.id && branch?.code && branch?.name)
+      .map((branch) => ({
+        key: String(branch.code),
+        label: String(branch.name).replace(/^Bistro\s+/i, ''),
+        id: String(branch.id),
+      }));
+
+    if (branches.length === 0) return;
+
+    BRANCHES.splice(0, BRANCHES.length, ...branches);
+    for (const key of Object.keys(BRANCH_MAP)) delete BRANCH_MAP[key];
+    for (const branch of branches) {
+      BRANCH_MAP[branch.key] = branch.id;
+      BRANCH_MAP[branch.label] = branch.id;
+    }
+    DEFAULT_BRANCH_ID = branches[0].id;
+  } catch {
+    // Keep the local branch list available if the API is temporarily unavailable.
+  }
+}
 
 export type UserRole =
   | 'CUSTOMER'

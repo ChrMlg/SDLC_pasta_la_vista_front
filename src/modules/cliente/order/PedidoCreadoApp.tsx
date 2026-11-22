@@ -66,8 +66,8 @@ export function PedidoCreadoApp({ onNavigate, createdData }: PedidoCreadoProps) 
               <span>Flujo operativo</span>
               <strong>
                 {isDineIn
-                  ? 'Comanda enviada a Cocina (Módulo 3)'
-                  : 'Pendiente de pago (PAID) en Módulo 6 para entrar a Cocina'}
+                  ? 'Tu pedido fue enviado a cocina.'
+                  : 'Paga tu pedido para que se envíe a cocina.'}
               </strong>
             </div>
           </div>

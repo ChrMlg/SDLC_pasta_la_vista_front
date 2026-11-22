@@ -96,7 +96,7 @@ export function ClientePedidoApp({
     } catch (err: any) {
       setError(
         err.message ||
-          'No se pudo asignar la mesa. Verifica el módulo de Selección de Mesa (Módulo 5).'
+          'No se pudo asignar la mesa. Selecciona una mesa disponible e inténtalo de nuevo.'
       );
     } finally {
       setAssigningTable(false);

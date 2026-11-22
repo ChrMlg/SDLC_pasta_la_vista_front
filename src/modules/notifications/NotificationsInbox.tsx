@@ -29,7 +29,9 @@ export function NotificationsInbox() {
               : body.message ?? 'No se pudieron cargar las notificaciones.';
           throw new Error(message);
         }
-        return response.json() as Promise<Page>;
+        if (response.status === 204) return { data: [], total: 0, page, pageSize: 10 };
+        const text = await response.text();
+        return text.trim() ? JSON.parse(text) as Page : { data: [], total: 0, page, pageSize: 10 };
       })
       .then(setResult)
       .catch((cause: unknown) => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'No se pudieron cargar las notificaciones.'); })

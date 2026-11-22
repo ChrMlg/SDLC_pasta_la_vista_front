@@ -17,7 +17,8 @@ export function OrdersBoard({ session }: { session: MenuSession }) {
     try {
       const response = await fetch('/api/orders', { credentials: 'include' });
       if (!response.ok) throw new Error('No se pudieron cargar los pedidos');
-      setOrders(await response.json() as TrackedOrder[]);
+      const text = response.status === 204 ? '' : await response.text();
+      setOrders(text.trim() ? JSON.parse(text) as TrackedOrder[] : []);
       setError('');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Error al cargar pedidos'); }
     finally { if (!silent) setLoading(false); }
@@ -31,7 +32,11 @@ export function OrdersBoard({ session }: { session: MenuSession }) {
   }, [refresh]);
   useEffect(() => {
     if (!session.branchId) return;
-    fetch('/api/branches', { credentials: 'include' }).then(response => response.ok ? response.json() : [])
+    fetch('/api/branches', { credentials: 'include' }).then(async response => {
+      if (!response.ok || response.status === 204) return [];
+      const text = await response.text();
+      return text.trim() ? JSON.parse(text) as { id: string; name: string }[] : [];
+    })
       .then((branches: { id: string; name: string }[]) => setBranchName(branches.find(branch => branch.id === session.branchId)?.name ?? ''))
       .catch(() => {});
   }, [session.branchId]);

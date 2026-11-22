@@ -183,7 +183,7 @@ export function CheckoutPago({ billId: billIdProp, session }: CheckoutPagoProps)
   </main>;
 
   return <main className="shell billingPage">
-    <p className="eyebrow">MÓDULO 6</p>
+    <p className="eyebrow">COBRO</p>
     <h1>Checkout de pago</h1>
     {loading && <p role="status">Cargando cuenta...</p>}
     {error && <p role="alert" className="error">{error}</p>}
