@@ -18,7 +18,7 @@ Los usuarios de prueba se entregan en Moodle, no en este repositorio.
 
 | Nombre | Carnet | Usuario de GitHub | Módulos o historias principales |
 |---|---|---|---|
-| Ronald Francisco Rivas Diaz | 00131321 | @@RonaldFRDiaz | Módulos 4, 5, 6, 7 y 8 Módulo 4: Reservaciones.  Módulo 5: Inventario  Módulo 6: Mesas y cobros/cierre   Módulo 7: Programa de lealtad / puntos.   Módulo 8: Reseñas |
+| Ronald Francisco Rivas Diaz | 00131321 | @RonaldFRDiaz | Módulos 4, 5, 6, 7 y 8 Módulo 4: Reservaciones.  Módulo 5: Inventario  Módulo 6: Mesas y cobros/cierre   Módulo 7: Programa de lealtad / puntos.   Módulo 8: Reseñas |
 | Diego Armando Jacobo Cornejo| 00043719 | @DiegoJacob0 | Módulos 1, 2, 3, 9 y 10Módulo 1: Menú y catálogo.   Módulo 2: Pedidos y órdenes.   Módulo 3: Cocina y seguimiento.   Módulo 9: Notificaciones y avisos.   Módulo 10: Reportes y estadísticas. |
 
 ## Documentación
