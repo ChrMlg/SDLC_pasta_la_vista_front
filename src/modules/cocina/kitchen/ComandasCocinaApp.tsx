@@ -224,7 +224,7 @@ export function ComandasCocinaApp({ onNavigate, defaultBranchId }: ComandasCocin
           )}
 
           <div className="kitchen-notice-box">
-            Los pedidos para llevar (TAKEAWAY) solo ingresan a cocina cuando su pago está confirmado (PAID).
+            Los pedidos para llevar solo ingresan a cocina cuando el pago está confirmado.
           </div>
         </div>
       </main>

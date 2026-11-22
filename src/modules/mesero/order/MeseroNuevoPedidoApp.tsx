@@ -8,8 +8,15 @@ import {
 } from './mesero-order-api';
 import './mesero-order.css';
 
-// TODO: Configure only after the backend's orderable table statuses are confirmed.
-const ORDERABLE_TABLE_STATUSES: readonly string[] | null = null;
+const BLOCKED_TABLE_STATUSES = ['NEEDS_CLEANING', 'OUT_OF_SERVICE'];
+// TODO: Confirm whether the backend accepts orders at AVAILABLE tables before adding them here.
+const TABLE_STATUS_LABELS: Record<string, string> = {
+  AVAILABLE: 'Disponible',
+  OCCUPIED: 'Ocupada',
+  NEEDS_CLEANING: 'Por limpiar',
+  RESERVED: 'Reservada',
+  OUT_OF_SERVICE: 'Fuera de servicio',
+};
 
 interface OrderItem {
   id: string;
@@ -68,11 +75,11 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
       );
 
       setTables(branchTables);
-      const firstOrderableTable = ORDERABLE_TABLE_STATUSES
-        ? branchTables.find((table) => ORDERABLE_TABLE_STATUSES.includes(table.status ?? ''))
-        : branchTables[0];
-      if (firstOrderableTable) {
-        setSelectedTableId(firstOrderableTable.id);
+      const selectedTable = branchTables.find((table) => table.status === 'OCCUPIED')
+        || branchTables.find((table) => !BLOCKED_TABLE_STATUSES.includes(table.status ?? ''))
+        || branchTables[0];
+      if (selectedTable) {
+        setSelectedTableId(selectedTable.id);
       }
     } catch (err: any) {
       setItems([]);
@@ -237,8 +244,8 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
                 value={serviceType}
                 onChange={(e) => setServiceType(e.target.value as 'DINE_IN' | 'TAKEAWAY')}
               >
-                <option value="DINE_IN">En mesa · DINE_IN</option>
-                <option value="TAKEAWAY">Para llevar · TAKEAWAY</option>
+                <option value="DINE_IN">En mesa</option>
+                <option value="TAKEAWAY">Para llevar</option>
               </select>
             </div>
           </div>
@@ -259,10 +266,9 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
                       <option
                         key={t.id}
                         value={t.id}
-                        disabled={ORDERABLE_TABLE_STATUSES !== null
-                          && !ORDERABLE_TABLE_STATUSES.includes(t.status ?? '')}
+                        disabled={BLOCKED_TABLE_STATUSES.includes(t.status ?? '')}
                       >
-                        {t.label} · {t.status ?? 'Estado desconocido'}
+                        {t.label} · {TABLE_STATUS_LABELS[t.status ?? ''] ?? t.status ?? 'Estado desconocido'}
                       </option>
                     ))
                   )}

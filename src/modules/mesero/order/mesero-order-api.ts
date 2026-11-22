@@ -115,7 +115,8 @@ export async function createWaiterOrder(payload: CreateOrderPayload) {
     });
   } catch (error) {
     if (isInactiveTableError(error)) {
-      throw new Error('Esta mesa no está activa. Elige otra o pide al cliente que se siente primero.');
+      console.warn('El servidor rechazó el pedido porque la mesa no está activa:', error);
+      throw new Error('Esta mesa no está activa. Elige una mesa ocupada o pide al cliente que se siente primero.');
     }
     throw error;
   }

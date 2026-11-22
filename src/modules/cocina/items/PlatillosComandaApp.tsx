@@ -249,7 +249,21 @@ export function PlatillosComandaApp({
                     {readyCount} / {totalCount} listos ({progressPercent}%)
                   </span>
                 </div>
-                <span className="status-pill ready">{comanda.status}</span>
+                <span className="status-pill ready">{({
+                  PENDING: 'Pendiente',
+                  CONFIRMED: 'Confirmado',
+                  QUEUED: 'En cola',
+                  UNASSIGNED: 'Sin asignar',
+                  PREPARING: 'En preparación',
+                  IN_PREPARATION: 'En preparación',
+                  IN_PROGRESS: 'En preparación',
+                  TAKEN: 'En preparación',
+                  READY: 'Listo',
+                  OUT_FOR_DELIVERY: 'En camino',
+                  DELIVERED: 'Entregado',
+                  PICKED_UP: 'Recogido',
+                  CANCELLED: 'Cancelado',
+                } as Record<string, string>)[comanda.status] ?? 'Estado desconocido'}</span>
               </div>
 
               <div

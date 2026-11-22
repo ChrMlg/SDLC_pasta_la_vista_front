@@ -72,11 +72,23 @@ function failureMessage(error: unknown, fallback: string) {
 
 const orderStatusLabel: Record<string, string> = {
   PENDING: 'Pendiente',
+  CONFIRMED: 'Confirmado',
+  QUEUED: 'En cola',
+  UNASSIGNED: 'Sin asignar',
+  PREPARING: 'En preparación',
   IN_PREPARATION: 'En preparación',
+  IN_PROGRESS: 'En preparación',
+  TAKEN: 'En preparación',
   READY: 'Listo',
   OUT_FOR_DELIVERY: 'En camino',
+  PICKED_UP: 'Recogido',
   DELIVERED: 'Entregado',
   CANCELLED: 'Cancelado',
+};
+const billStatusLabel: Record<Bill['status'], string> = {
+  OPEN: 'Abierta',
+  PAID: 'Pagada',
+  CANCELLED: 'Cancelada',
 };
 
 const Amounts = ({ data }: { data: Pick<Bill, 'subtotal' | 'discount' | 'tax' | 'total'> }) =>
@@ -275,7 +287,7 @@ export function WaiterBillDetail({ session }: { session: MenuSession }) {
     </div>}
     {bill && <>
       <section className="billingCard">
-        <p>Estado: <strong>{bill.status}</strong></p>
+        <p>Estado: <strong>{billStatusLabel[bill.status]}</strong></p>
         <Amounts data={bill} />
         {bill.status === 'OPEN' && <Link className="billingButton"
           to={`/checkout?billId=${encodeURIComponent(bill.id)}`}

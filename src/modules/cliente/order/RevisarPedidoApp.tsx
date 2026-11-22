@@ -104,7 +104,7 @@ export function RevisarPedidoApp({ onNavigate, orderData }: RevisarPedidoProps) 
             </div>
             <div className="availability-row-detail" style={{ marginBottom: '0.5rem' }}>
               <span>Modalidad</span>
-              <strong>{serviceType === 'DINE_IN' ? 'En mesa (DINE_IN)' : 'Para llevar (TAKEAWAY)'}</strong>
+              <strong>{serviceType === 'DINE_IN' ? 'En mesa' : 'Para llevar'}</strong>
             </div>
             {serviceType === 'DINE_IN' && (
               <div className="availability-row-detail">

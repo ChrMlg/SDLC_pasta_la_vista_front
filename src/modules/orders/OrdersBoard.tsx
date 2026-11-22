@@ -4,7 +4,21 @@ import type { MenuSession } from '../menu/MenuApp';
 type TrackedOrder = { id: string; orderNumber: number; branchId: string; branchName: string; tableNumber: number | null;
   type: 'DINE_IN' | 'TAKEAWAY'; status: string; ticketStatus: string | null; total: string; createdAt: string;
   items: { id: string; name: string; quantity: number; note: string | null }[] };
-const labels: Record<string, string> = { PENDING: 'Pendiente', IN_PREPARATION: 'En preparación', READY: 'Listo para entregar', DELIVERED: 'Entregado', CANCELLED: 'Cancelado' };
+const labels: Record<string, string> = {
+  PENDING: 'Pendiente',
+  CONFIRMED: 'Confirmado',
+  QUEUED: 'En cola',
+  UNASSIGNED: 'Sin asignar',
+  PREPARING: 'En preparación',
+  IN_PREPARATION: 'En preparación',
+  IN_PROGRESS: 'En preparación',
+  TAKEN: 'En preparación',
+  READY: 'Listo para entregar',
+  OUT_FOR_DELIVERY: 'En camino',
+  DELIVERED: 'Entregado',
+  PICKED_UP: 'Recogido',
+  CANCELLED: 'Cancelado',
+};
 
 export function OrdersBoard({ session }: { session: MenuSession }) {
   const [orders, setOrders] = useState<TrackedOrder[]>([]);
@@ -65,7 +79,7 @@ export function OrdersBoard({ session }: { session: MenuSession }) {
     {session.role === 'WAITER' && orders.some(order => order.status === 'PENDING' || order.status === 'IN_PREPARATION') && <p className="awaitingSummary" role="status">{orders.filter(order => order.status === 'PENDING' || order.status === 'IN_PREPARATION').length} pedido(s) pendientes de cocina o pago</p>}
     <div className="orderGrid">{orders.map(order => { const action = next(order); const awaiting = session.role === 'WAITER' && (order.status === 'PENDING' || order.status === 'IN_PREPARATION'); return <article className={`trackedOrder${awaiting ? ' awaitingOrder' : ''}`} key={order.id}>
       <div className="trackedTop"><div><small>{session.role === 'GENERAL_MANAGER' ? `${order.branchName} · ` : ''}{order.type === 'DINE_IN' ? `Mesa ${order.tableNumber ?? '—'}` : 'Para llevar'} · {new Date(order.createdAt).toLocaleString('es-GT')}</small>
-        <h2>Pedido #{order.orderNumber}</h2></div><span className={`statusBadge${awaiting ? ' awaitingBadge' : ''}`}>{order.status === 'PENDING' && !order.ticketStatus ? 'Pendiente de pago' : labels[order.status] ?? order.status}</span></div>
+        <h2>Pedido #{order.orderNumber}</h2></div><span className={`statusBadge${awaiting ? ' awaitingBadge' : ''}`}>{order.status === 'PENDING' && !order.ticketStatus ? 'Pendiente de pago' : labels[order.status] ?? 'Estado desconocido'}</span></div>
       <ul>{order.items.map(item => <li key={item.id}>{item.quantity} × {item.name}{item.note && <small> · {item.note}</small>}</li>)}</ul>
       <div className="trackedFoot"><strong>Total ${order.total}</strong>{action && <button disabled={busy !== null} onClick={() => void change(order, action[0])}>{busy === order.id ? 'Guardando...' : action[1]}</button>}</div>
     </article>; })}</div>

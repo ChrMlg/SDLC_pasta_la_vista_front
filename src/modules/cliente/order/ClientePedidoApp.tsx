@@ -12,6 +12,14 @@ import {
 } from './cliente-order-api';
 import './cliente-order.css';
 
+const TABLE_STATUS_LABELS: Record<string, string> = {
+  AVAILABLE: 'Disponible',
+  OCCUPIED: 'Ocupada',
+  NEEDS_CLEANING: 'Por limpiar',
+  RESERVED: 'Reservada',
+  OUT_OF_SERVICE: 'Fuera de servicio',
+};
+
 interface DishItem {
   id: string;
   name: string;
@@ -218,14 +226,14 @@ export function ClientePedidoApp({
               className={`toggle-btn ${serviceType === 'DINE_IN' ? 'active' : ''}`}
               onClick={() => setServiceType('DINE_IN')}
             >
-              En mesa · DINE_IN
+              En mesa
             </button>
             <button
               type="button"
               className={`toggle-btn ${serviceType === 'TAKEAWAY' ? 'active' : ''}`}
               onClick={() => setServiceType('TAKEAWAY')}
             >
-              Para llevar · TAKEAWAY
+              Para llevar
             </button>
           </div>
 
@@ -261,7 +269,7 @@ export function ClientePedidoApp({
                       ) : (
                         tables.map((t) => (
                           <option key={t.id} value={t.id} disabled={t.status !== 'AVAILABLE'}>
-                            Mesa {String(t.number).padStart(2, '0')} · {t.status}
+                            Mesa {String(t.number).padStart(2, '0')} · {TABLE_STATUS_LABELS[t.status] ?? t.status}
                           </option>
                         ))
                       )}
@@ -287,7 +295,7 @@ export function ClientePedidoApp({
             </div>
           ) : (
             <div className="info-banner">
-              Para llevar (<code>TAKEAWAY</code>): retiro en sucursal ({selectedBranchLabel}), no
+              Para llevar: retiro en sucursal ({selectedBranchLabel}), no
               requiere mesa y entra a cocina tras confirmar el pago
             </div>
           )}

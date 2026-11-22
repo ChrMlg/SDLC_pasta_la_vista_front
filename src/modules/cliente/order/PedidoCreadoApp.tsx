@@ -25,7 +25,22 @@ export function PedidoCreadoApp({ onNavigate, createdData }: PedidoCreadoProps) 
     (order.id ? `#${String(order.id).slice(0, 6).toUpperCase()}` : '#0107');
 
   const statusRaw = order.status || 'PENDING';
-  const statusLabel = statusRaw === 'PENDING' ? 'Pendiente · PENDING' : statusRaw;
+  const statusLabels: Record<string, string> = {
+    PENDING: 'Pendiente',
+    CONFIRMED: 'Confirmado',
+    QUEUED: 'En cola',
+    UNASSIGNED: 'Sin asignar',
+    PREPARING: 'En preparación',
+    IN_PREPARATION: 'En preparación',
+    IN_PROGRESS: 'En preparación',
+    TAKEN: 'En preparación',
+    READY: 'Listo',
+    OUT_FOR_DELIVERY: 'En camino',
+    PICKED_UP: 'Recogido',
+    DELIVERED: 'Entregado',
+    CANCELLED: 'Cancelado',
+  };
+  const statusLabel = statusLabels[statusRaw] ?? 'Estado desconocido';
 
   return (
     <div className="cliente-container">

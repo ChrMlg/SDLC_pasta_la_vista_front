@@ -43,7 +43,7 @@ export function HorariosDemandaApp() {
 
         <h1>Horarios de mayor demanda</h1>
         <p className="subtitle-desc">
-          Pedidos PAID agrupados en intervalos de 60 minutos por sucursal.
+          Pedidos pagados agrupados en intervalos de 60 minutos por sucursal.
         </p>
 
         <div className="card-report-panel">
