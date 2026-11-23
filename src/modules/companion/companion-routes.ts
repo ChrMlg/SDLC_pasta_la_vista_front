@@ -11,12 +11,14 @@ export function isCompanionPath(path: string): boolean {
     '/my-reviews',
     '/reviews',
     '/my-loyalty',
+    '/table-status',
     '/waiter/billing',
     '/my-receipts',
     '/checkout',
     '/loyalty/redeem',
   ];
   if (exact.includes(pathname)) return true;
+  if (/^\/branches\/[^/]+\/orders\/[^/]+\/billing$/.test(pathname)) return true;
   return ['/waiter/billing/', '/my-receipts/', '/checkout/', '/loyalty/redeem/']
     .some(prefix => pathname.startsWith(prefix));
 }

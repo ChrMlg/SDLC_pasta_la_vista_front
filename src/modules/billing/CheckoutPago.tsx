@@ -6,6 +6,7 @@ import { request, type BillingRequestError } from './billing-api';
 type Bill = {
   id: string;
   branchId: string;
+  type: 'DINE_IN' | 'TAKEAWAY';
   status: 'OPEN' | 'PAID' | 'CANCELLED';
   total: string;
 };
@@ -17,10 +18,12 @@ type PaymentResult = {
 type CheckoutPagoProps = {
   billId?: string;
   session?: MenuSession;
+  takeawayOrderId?: string;
+  onNavigate?: (path: string, data?: any) => void;
 };
 type PaymentFields = 'cardHolder' | 'cardNumber' | 'expMonth' | 'expYear' | 'cvv';
 type FieldErrors = Partial<Record<PaymentFields, string>>;
-type CheckoutNavigationState = { summary?: unknown; tableNumber?: number };
+type CheckoutNavigationState = { summary?: unknown; tableNumber?: number; takeawayOrderId?: string };
 
 function isValidCardNumber(value: string) {
   if (!/^\d{16}$/.test(value)) return false;
@@ -60,12 +63,19 @@ function paymentError(error: unknown) {
     if (failure.status === 401) return 'Inicia sesión para continuar';
     if (failure.status === 403) return 'No tiene permiso para cobrar en esta sucursal';
     if (failure.status === 404) return 'No se encontró la cuenta';
-    return failure.message;
+    if (failure.status === 422) return 'Los datos de pago no son válidos. Revísalos e inténtalo de nuevo.';
+    if (failure.status === 409) return 'No se pudo confirmar el pago. Actualiza la cuenta e inténtalo de nuevo.';
+    return 'No se pudo completar el pago. Inténtalo de nuevo.';
   }
-  return error instanceof Error ? error.message : 'No se pudo completar el pago';
+  return 'No se pudo conectar para completar el pago. Verifica tu conexión e inténtalo de nuevo.';
 }
 
-export function CheckoutPago({ billId: billIdProp, session }: CheckoutPagoProps) {
+export function CheckoutPago({
+  billId: billIdProp,
+  session,
+  takeawayOrderId,
+  onNavigate,
+}: CheckoutPagoProps) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const waiterNavigationState = location.state as CheckoutNavigationState | null;
@@ -229,7 +239,24 @@ export function CheckoutPago({ billId: billIdProp, session }: CheckoutPagoProps)
         {bill.status === 'CANCELLED' && <p role="alert" className="error">Esta cuenta no admite pagos</p>}
       </section>
       {paymentStatus === 'PAID' && <section className="billingCard">
-        <p role="status" className="notice">Pago aprobado</p>
+        <p role="status" className="notice">
+          {bill.type === 'TAKEAWAY'
+            ? 'Pago aprobado. Tu pedido ya fue enviado a cocina.'
+            : 'Pago aprobado'}
+        </p>
+        {bill.type === 'TAKEAWAY' && onNavigate && <button type="button" onClick={() => {
+          if (session?.role === 'WAITER') {
+            onNavigate('/waiter/orders');
+          } else {
+            onNavigate('/my-orders', {
+              order: { id: takeawayOrderId, type: 'TAKEAWAY' },
+              serviceType: 'TAKEAWAY',
+              paymentApproved: true,
+            });
+          }
+        }}>
+          Ir al seguimiento de pedidos
+        </button>}
         {receiptPath && <div className="billingActions">
           <Link to={receiptPath}>Ver comprobante</Link>
           <a href={pdfPath} download>Descargar PDF</a>

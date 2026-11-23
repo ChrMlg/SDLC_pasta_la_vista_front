@@ -95,7 +95,6 @@ export async function createWaiterOrder(payload: CreateOrderPayload) {
   const mappedItems = payload.items.map((item) => ({
     dishId: item.menuItemId,
     quantity: item.quantity,
-    ...(item.notes ? { notes: item.notes } : {}),
   }));
 
   const apiBody: Record<string, unknown> = {

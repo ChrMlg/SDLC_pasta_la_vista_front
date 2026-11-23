@@ -181,6 +181,13 @@ function AppShell() {
               </button>
               <button
                 type="button"
+                className={navButtonClass(cleanPath === '/table-status')}
+                onClick={() => handleNavigate('/table-status')}
+              >
+                Estado de mesas
+              </button>
+              <button
+                type="button"
                 className={navButtonClass(cleanPath === '/management/reservations')}
                 onClick={() => handleNavigate('/management/reservations')}
               >
@@ -232,6 +239,13 @@ function AppShell() {
                 onClick={() => handleNavigate('/waiter/billing')}
               >
                 Cuentas / Cobro
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/table-status')}
+                onClick={() => handleNavigate('/table-status')}
+              >
+                Estado de mesas
               </button>
               <button
                 type="button"

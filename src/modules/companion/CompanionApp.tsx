@@ -22,6 +22,7 @@ import {
   WaiterBillDetail,
 } from '../billing/BillingApp';
 import { CheckoutEntry } from './CheckoutEntry';
+import { TableStatusApp } from './TableStatusApp';
 import { toInnerPath } from './companion-routes';
 import './companion-base.css';
 import './companion.css';
@@ -107,6 +108,9 @@ export function CompanionApp({ session, path, routeParams, onNavigate }: Compani
         <Route path="/loyalty/redeem" element={<RedeemPoints role={session.role} />} />
         <Route path="/waiter/billing" element={<WaiterBilling session={menuSession} />} />
         <Route path="/waiter/billing/:billId" element={<WaiterBillDetail session={menuSession} />} />
+        <Route path="/table-status" element={['WAITER', 'MANAGER'].includes(session.role)
+          ? <TableStatusApp branchId={session.branchId} />
+          : <main className="shell"><p role="alert" className="error">No tienes permiso para consultar las mesas de esta sucursal.</p></main>} />
         <Route path="/branches/:branchId/tables/:tableId/billing" element={<TableBilling session={menuSession} />} />
         <Route path="/branches/:branchId/orders/:orderId/billing" element={<TakeawayBilling session={menuSession} />} />
         <Route path="/my-receipts" element={session.role === 'CUSTOMER'

@@ -6,17 +6,12 @@ import {
   createWaiterOrder,
   BranchTableOption,
 } from './mesero-order-api';
+import {
+  BLOCKED_TABLE_STATUSES,
+  isOrderableTable,
+  TABLE_STATUS_LABELS,
+} from '../../../shared/table-status';
 import './mesero-order.css';
-
-const BLOCKED_TABLE_STATUSES = ['NEEDS_CLEANING', 'OUT_OF_SERVICE'];
-// TODO: Confirm whether the backend accepts orders at AVAILABLE tables before adding them here.
-const TABLE_STATUS_LABELS: Record<string, string> = {
-  AVAILABLE: 'Disponible',
-  OCCUPIED: 'Ocupada',
-  NEEDS_CLEANING: 'Por limpiar',
-  RESERVED: 'Reservada',
-  OUT_OF_SERVICE: 'Fuera de servicio',
-};
 
 interface OrderItem {
   id: string;
@@ -46,6 +41,7 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [takeawayBillingPath, setTakeawayBillingPath] = useState('');
 
   const selectedBranchLabel =
     BRANCHES.find((b) => b.id === branchId)?.label.toUpperCase() || 'SUCURSAL';
@@ -75,9 +71,7 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
       );
 
       setTables(branchTables);
-      const selectedTable = branchTables.find((table) => table.status === 'OCCUPIED')
-        || branchTables.find((table) => !BLOCKED_TABLE_STATUSES.includes(table.status ?? ''))
-        || branchTables[0];
+      const selectedTable = branchTables.find((table) => isOrderableTable(table.status));
       if (selectedTable) {
         setSelectedTableId(selectedTable.id);
       }
@@ -145,6 +139,7 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
       setSubmitting(true);
       setError('');
       setSuccessMsg('');
+      setTakeawayBillingPath('');
 
       const orderItems = items
         .filter((item) => item.quantity > 0)
@@ -154,19 +149,26 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
           ...(specialNotes.trim() ? { notes: specialNotes.trim() } : {}),
         }));
 
-      await createWaiterOrder({
+      const response = await createWaiterOrder({
         branchId,
         serviceType,
         tableId: serviceType === 'DINE_IN' ? selectedTableId : null,
         items: orderItems,
       });
 
-      setSuccessMsg('¡Pedido registrado y enviado a cocina con éxito!');
+      const created = response?.data || response;
+      if (serviceType === 'TAKEAWAY') {
+        setSuccessMsg('Pedido registrado. Cocina lo recibirá cuando se confirme el pago.');
+        if (created?.id) {
+          setTakeawayBillingPath(
+            `/branches/${encodeURIComponent(branchId)}/orders/${encodeURIComponent(created.id)}/billing`
+          );
+        }
+      } else {
+        setSuccessMsg('¡Pedido registrado y enviado a cocina con éxito!');
+      }
       setItems((prev) => prev.map((item) => ({ ...item, quantity: 0 })));
       setSpecialNotes('');
-      setTimeout(() => {
-        onNavigate('/waiter/orders');
-      }, 1000);
     } catch (err: any) {
       setError(err.message || 'No se pudo enviar el pedido.');
     } finally {
@@ -257,18 +259,20 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
                 <select
                   value={selectedTableId}
                   onChange={(e) => setSelectedTableId(e.target.value)}
-                  disabled={tables.length === 0}
+                  disabled={!tables.some((table) => isOrderableTable(table.status))}
                 >
-                  {tables.length === 0 ? (
-                    <option value="">Sin mesas disponibles</option>
+                  {loading ? (
+                    <option value="">Cargando mesas...</option>
+                  ) : !tables.some((table) => isOrderableTable(table.status)) ? (
+                    <option value="">Sin mesas ocupadas</option>
                   ) : (
                     tables.map((t) => (
                       <option
                         key={t.id}
                         value={t.id}
-                        disabled={BLOCKED_TABLE_STATUSES.includes(t.status ?? '')}
+                        disabled={!isOrderableTable(t.status) || BLOCKED_TABLE_STATUSES.some(status => status === t.status)}
                       >
-                        {t.label} · {TABLE_STATUS_LABELS[t.status ?? ''] ?? t.status ?? 'Estado desconocido'}
+                        {t.label} · {TABLE_STATUS_LABELS[t.status ?? ''] ?? 'Estado desconocido'}
                       </option>
                     ))
                   )}
@@ -276,6 +280,9 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
               </div>
               <div />
             </div>
+          )}
+          {serviceType === 'DINE_IN' && !loading && !tables.some((table) => isOrderableTable(table.status)) && (
+            <p role="status">No hay mesas ocupadas. El cliente debe sentarse primero.</p>
           )}
 
           <div className="menu-filter-section">
@@ -382,7 +389,7 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
             <button
               type="button"
               className="btn-primary-green btn-full"
-              disabled={submitting || subtotal === 0}
+              disabled={submitting || subtotal === 0 || (serviceType === 'DINE_IN' && !selectedTableId)}
               onClick={handleConfirmOrder}
               style={{
                 background: '#059669',
@@ -397,6 +404,15 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
             >
               {submitting ? 'Confirmando pedido...' : 'Confirmar pedido'}
             </button>
+            {serviceType === 'TAKEAWAY' && takeawayBillingPath && (
+              <button
+                type="button"
+                className="btn-primary-green btn-full"
+                onClick={() => onNavigate(takeawayBillingPath)}
+              >
+                Cobrar ahora
+              </button>
+            )}
           </div>
         </div>
       </main>
