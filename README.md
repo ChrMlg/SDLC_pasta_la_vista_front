@@ -10,7 +10,7 @@ Interfaz web del sistema de gestión para restaurantes con sucursales (catálogo
 | Componente | URL |
 |---|---|
 | Frontend | https://sdlc-pasta-la-vista-front-gray.vercel.app/ | v1.0.0 
-            | https://sdlc-pasta-la-vista-front-aniq.vercel.app/ | v1.0.1 
+| Frontend | https://sdlc-pasta-la-vista-front-aniq.vercel.app/ | v1.0.1 
 | Documentación de la API (Swagger) | https://practical-transformation-staging.up.railway.app/api/docs |
 
 Los usuarios de prueba se entregan en Moodle, no en este repositorio.
