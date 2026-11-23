@@ -89,9 +89,8 @@ export async function assignCustomerTable(branchId: string, tableId: string): Pr
  */
 export async function createCustomerOrder(payload: CreateCustomerOrderPayload) {
   const mappedItems = payload.items.map((item) => ({
-    menuItemId: item.menuItemId,
+    dishId: item.menuItemId,
     quantity: item.quantity,
-    ...(item.notes?.trim() ? { notes: item.notes.trim() } : {}),
   }));
 
   const body: Record<string, unknown> = {
