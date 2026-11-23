@@ -33,3 +33,74 @@ h3 {
   font-family: 'Playfair Display', Georgia, serif;
   letter-spacing: -0.02em;
 }
+
+/* Estilos del Shell principal y barra de navegación */
+.app-nav {
+  background: linear-gradient(135deg, #10291d, #0f172a);
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-nav-links {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.app-brand-badge {
+  font-weight: 700;
+  color: #34d399;
+  margin-right: 0.4rem;
+}
+
+.app-nav-btn {
+  background: transparent;
+  border: 1px solid #3c4b61;
+  color: #ffffff;
+  padding: 0.48rem 0.78rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-nav-btn:hover {
+  border-color: #5b708e;
+}
+
+.app-nav-btn--active {
+  background: linear-gradient(135deg, #17684a, #0f5138);
+  border-color: #2d7a5b;
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.14);
+}
+
+.app-nav-btn--active:hover {
+  border-color: #2d7a5b;
+}
+
+.app-logout-btn {
+  background: #dc2626;
+  border: none;
+  color: #ffffff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.app-logout-btn:hover {
+  background: #b91c1c;
+}

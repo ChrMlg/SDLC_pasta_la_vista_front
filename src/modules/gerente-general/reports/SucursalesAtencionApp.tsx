@@ -118,7 +118,7 @@ export function SucursalesAtencionApp() {
           </table>
 
           <div className="footer-report-note">
-            Evaluado únicamente sobre pedidos pagados (PAID) y no anulados dentro del rango seleccionado.
+            Evaluado únicamente sobre pedidos pagados y no anulados dentro del rango seleccionado.
           </div>
         </div>
       </main>

@@ -72,11 +72,23 @@ function failureMessage(error: unknown, fallback: string) {
 
 const orderStatusLabel: Record<string, string> = {
   PENDING: 'Pendiente',
+  CONFIRMED: 'Confirmado',
+  QUEUED: 'En cola',
+  UNASSIGNED: 'Sin asignar',
+  PREPARING: 'En preparación',
   IN_PREPARATION: 'En preparación',
+  IN_PROGRESS: 'En preparación',
+  TAKEN: 'En preparación',
   READY: 'Listo',
   OUT_FOR_DELIVERY: 'En camino',
+  PICKED_UP: 'Recogido',
   DELIVERED: 'Entregado',
   CANCELLED: 'Cancelado',
+};
+const billStatusLabel: Record<Bill['status'], string> = {
+  OPEN: 'Abierta',
+  PAID: 'Pagada',
+  CANCELLED: 'Cancelada',
 };
 
 const Amounts = ({ data }: { data: Pick<Bill, 'subtotal' | 'discount' | 'tax' | 'total'> }) =>
@@ -207,7 +219,7 @@ export function WaiterBilling({ session }: { session: MenuSession }) {
   }
 
   return <main className="shell billingPage">
-    <p className="eyebrow">MÓDULO 6 · MESERO</p>
+    <p className="eyebrow">CUENTAS · MESERO</p>
     <h1>Cerrar cuenta</h1>
     <section className="billingCard">
       <label className="billingSelectLabel">Seleccionar mesa ocupada
@@ -258,7 +270,7 @@ export function WaiterBillDetail({ session }: { session: MenuSession }) {
   if (session.role !== 'WAITER' || !session.branchId) return <main className="shell"><p role="alert">No tienes permiso para consultar esta cuenta</p></main>;
 
   return <main className="shell billingPage">
-    <p className="eyebrow">MÓDULO 6 · MESERO</p>
+    <p className="eyebrow">CUENTAS · MESERO</p>
     <h1>{tableNumber !== undefined ? `Cuenta de la mesa ${tableNumber}` : 'Cuenta'}</h1>
     {loading && <p role="status">Cargando cuenta...</p>}
     {error && <p role="alert" className="error">{error}</p>}
@@ -275,7 +287,7 @@ export function WaiterBillDetail({ session }: { session: MenuSession }) {
     </div>}
     {bill && <>
       <section className="billingCard">
-        <p>Estado: <strong>{bill.status}</strong></p>
+        <p>Estado: <strong>{billStatusLabel[bill.status]}</strong></p>
         <Amounts data={bill} />
         {bill.status === 'OPEN' && <Link className="billingButton"
           to={`/checkout?billId=${encodeURIComponent(bill.id)}`}
@@ -326,7 +338,7 @@ export function TakeawayBilling({ session }: { session: MenuSession }) {
         setSaving(false);
       }
     }}>{saving ? 'Creando...' : 'Crear cuenta'}</button>}
-    {bill && <p role="status">Cuenta creada. <Link to={`/checkout?billId=${encodeURIComponent(bill.id)}`}>Cobrar</Link></p>}
+    {bill && <p role="status">Cuenta creada. <Link to={`/checkout?billId=${encodeURIComponent(bill.id)}`} state={{ takeawayOrderId: orderId }}>Cobrar</Link></p>}
   </main>;
 }
 
@@ -349,7 +361,7 @@ export function ReceiptList() {
 
   const pageCount = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
   return <main className="shell billingPage">
-    <p className="eyebrow">MÓDULO 6 · CLIENTE</p>
+    <p className="eyebrow">COMPROBANTES · CLIENTE</p>
     <h1>Mis comprobantes</h1>
     {loading && <p role="status">Cargando comprobantes...</p>}
     {error && <p role="alert" className="error">{error}</p>}
@@ -392,7 +404,7 @@ export function ReceiptDetail({ mine }: { mine: boolean }) {
   }, [path, mine]);
 
   return <main className="shell billingPage">
-    <p className="eyebrow">MÓDULO 6</p>
+    <p className="eyebrow">COMPROBANTE</p>
     <h1>Comprobante</h1>
     {loading && <p role="status">Cargando comprobante...</p>}
     {error && <p role="alert" className="error">{error}</p>}

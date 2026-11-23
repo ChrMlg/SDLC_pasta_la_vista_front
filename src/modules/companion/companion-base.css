@@ -1,0 +1,664 @@
+:where(.companion-root) * {
+  box-sizing: border-box;
+}
+
+:where(.companion-root) button,
+:where(.companion-root) input,
+:where(.companion-root) select,
+:where(.companion-root) textarea {
+  font: inherit;
+}
+
+:where(.companion-root) button {
+  background: #245a40;
+  color: #fff;
+  border: 0;
+  border-radius: 12px;
+  padding: .75rem 1.1rem;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background .18s, transform .18s, box-shadow .18s;
+}
+
+:where(.companion-root) button:hover:not(:disabled) {
+  background: #174730;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px #163d2a22;
+}
+
+:where(.companion-root) button:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+:where(.companion-root) a {
+  color: #245a40;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+:where(.companion-root) a:hover {
+  text-decoration: underline;
+}
+
+:where(.companion-root) h1,
+:where(.companion-root) h2,
+:where(.companion-root) h3 {
+  font-family: 'Playfair Display', Georgia, serif;
+  line-height: 1.15;
+}
+
+:where(.companion-root) h1 {
+  font-size: clamp(2.2rem, 5vw, 3.65rem);
+  letter-spacing: -.035em;
+  margin: .4rem 0 1rem;
+}
+
+:where(.companion-root) h2 {
+  font-size: 1.7rem;
+}
+
+:where(.companion-root) .shell {
+  max-width: 1160px;
+  margin: auto;
+  padding: 2.5rem 1.5rem;
+}
+
+:where(.companion-root) header,
+:where(.companion-root) .actions,
+:where(.companion-root) .pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+:where(.companion-root) .topNav {
+  background: #fff;
+  border-bottom: 1px solid #e7e9df;
+  box-shadow: 0 2px 18px #213c2a08;
+}
+
+:where(.companion-root) .navInner {
+  max-width: 1160px;
+  margin: auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+:where(.companion-root) .brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.75rem;
+  color: #1d4d36;
+}
+
+:where(.companion-root) .brand span {
+  color: #ca9b53;
+  margin-left: .2rem;
+}
+
+:where(.companion-root) .navLinks {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  flex-wrap: wrap;
+}
+
+:where(.companion-root) .navLinks a {
+  font-size: .9rem;
+  color: #455e4f;
+}
+
+:where(.companion-root) .navLinks form {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+:where(.companion-root) .navLinks form label {
+  font-size: .8rem;
+}
+
+:where(.companion-root) .navLinks input {
+  padding: .5rem;
+  border: 1px solid #d5dbd1;
+  border-radius: 8px;
+}
+
+:where(.companion-root) .navLogout,
+:where(.companion-root) .secondaryButton {
+  background: #eaf0e9;
+  color: #245a40;
+}
+
+:where(.companion-root) .navLogout:hover:not(:disabled),
+:where(.companion-root) .secondaryButton:hover:not(:disabled) {
+  background: #dce7dc;
+  box-shadow: none;
+}
+
+:where(.companion-root) .filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  background: #fff;
+  padding: 1.3rem;
+  border: 1px solid #e7e9df;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px #213c2a0a;
+}
+
+:where(.companion-root) .filters label,
+:where(.companion-root) .form label {
+  display: grid;
+  gap: .45rem;
+  font-weight: 700;
+  font-size: .9rem;
+}
+
+:where(.companion-root) .filters input,
+:where(.companion-root) .filters select,
+:where(.companion-root) .form input,
+:where(.companion-root) .form select,
+:where(.companion-root) .form textarea {
+  padding: .75rem;
+  border: 1px solid #cbd5c9;
+  border-radius: 10px;
+  min-width: 180px;
+  background: #fff;
+}
+
+:where(.companion-root) .form {
+  display: grid;
+  gap: 1rem;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 18px;
+  max-width: 650px;
+  box-shadow: 0 10px 30px #213c2a0a;
+}
+
+:where(.companion-root) .form textarea {
+  min-height: 100px;
+}
+
+:where(.companion-root) .form small,
+:where(.companion-root) .error {
+  color: #9d2f2f;
+}
+
+:where(.companion-root) .error {
+  background: #fff0ed;
+  border: 1px solid #f2c6bd;
+  padding: .9rem 1rem;
+  border-radius: 12px;
+}
+
+:where(.companion-root) .notice {
+  background: #e3f0e5;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+:where(.companion-root) .tableWrap {
+  overflow: auto;
+  background: #fff;
+  margin-top: 1rem;
+  border-radius: 15px;
+}
+
+:where(.companion-root) table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+:where(.companion-root) td,
+:where(.companion-root) th {
+  text-align: left;
+  padding: .9rem;
+  border-bottom: 1px solid #e6eae3;
+}
+
+:where(.companion-root) .cards,
+:where(.companion-root) .dishGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+  gap: 1.2rem;
+  margin-top: 1.2rem;
+}
+
+:where(.companion-root) .card,
+:where(.companion-root) .dishCard {
+  background: #fff;
+  border: 1px solid #e7e9df;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px #213c2a0b;
+}
+
+:where(.companion-root) .card {
+  padding: 1.3rem;
+}
+
+:where(.companion-root) .card p,
+:where(.companion-root) .dishCard p {
+  color: #69776d;
+}
+
+:where(.companion-root) .cardBottom {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+:where(.companion-root) .cardBottom strong {
+  margin-right: auto;
+}
+
+:where(.companion-root) .pagination {
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+:where(.companion-root) .textButton {
+  background: none;
+  color: #245a40;
+  text-decoration: underline;
+  padding: .4rem;
+}
+
+:where(.companion-root) .modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: #13291bbb;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+:where(.companion-root) .modal {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 18px;
+  max-width: 420px;
+  width: 90%;
+}
+
+:where(.companion-root) .eyebrow {
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .17em;
+  color: #ad8045;
+}
+
+:where(.companion-root) .flowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+:where(.companion-root) .flowHeader p {
+  font-size: 1.05rem;
+  color: #687a6e;
+  margin: 0;
+}
+
+:where(.companion-root) .steps {
+  display: flex;
+  gap: 1rem;
+  margin: 2rem 0;
+  flex-wrap: wrap;
+}
+
+:where(.companion-root) .steps span {
+  padding: .55rem .9rem;
+  background: #e8ece4;
+  color: #809083;
+  border-radius: 99px;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+:where(.companion-root) .steps span.active {
+  background: #dcebe0;
+  color: #23513a;
+}
+
+:where(.companion-root) .choiceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(275px, 1fr));
+  gap: 1rem;
+}
+
+:where(.companion-root) .choiceCard {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  gap: 1rem;
+  background: #fff;
+  color: #23432f;
+  padding: 1.4rem;
+  border: 1px solid #e4e9e0;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px #213c2a0a;
+  min-height: 110px;
+}
+
+:where(.companion-root) .choiceCard:hover:not(:disabled) {
+  background: #fdfefd;
+  border-color: #9cbea5;
+}
+
+:where(.companion-root) .choiceCard > span:last-child {
+  margin-left: auto;
+  font-size: 1.4rem;
+}
+
+:where(.companion-root) .choiceCard strong,
+:where(.companion-root) .choiceCard small {
+  display: block;
+}
+
+:where(.companion-root) .choiceCard strong {
+  font-size: 1.1rem;
+}
+
+:where(.companion-root) .choiceCard small {
+  color: #78877b;
+  margin-top: .25rem;
+}
+
+:where(.companion-root) .choiceIcon {
+  display: grid;
+  place-items: center;
+  min-width: 56px;
+  height: 56px;
+  background: #e6f0e6;
+  border-radius: 14px;
+  color: #276344;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+:where(.companion-root) .loadingCard {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+:where(.companion-root) .menuSection {
+  margin-top: 2rem;
+}
+
+:where(.companion-root) .sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+:where(.companion-root) .sectionHeading h2 {
+  margin: .4rem 0;
+}
+
+:where(.companion-root) .dishArt {
+  height: 125px;
+  background: radial-gradient(circle at 50% 90%, #f5e8ca 0 16%, transparent 17%), linear-gradient(130deg, #d6e5d5, #f5eddd);
+  display: grid;
+  place-items: center;
+  color: #b9965a;
+  font-size: 3rem;
+}
+
+:where(.companion-root) .dishBody {
+  padding: 1.2rem;
+}
+
+:where(.companion-root) .dishBody small {
+  font-size: .72rem;
+  font-weight: 700;
+  color: #aa7d47;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+:where(.companion-root) .dishBody h3 {
+  margin: .5rem 0;
+  font-size: 1.35rem;
+}
+
+:where(.companion-root) .dishBody p {
+  min-height: 2.7rem;
+  margin: .5rem 0 1rem;
+  font-size: .9rem;
+}
+
+:where(.companion-root) .dishFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+:where(.companion-root) .dishFoot strong {
+  font-size: 1.2rem;
+}
+
+:where(.companion-root) .dishFoot button {
+  padding: .6rem .8rem;
+  font-size: .85rem;
+}
+
+:where(.companion-root) .seatActions {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+
+:where(.companion-root) .activeSeatBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: #e6f0e6;
+  border: 1px solid #b9d5bc;
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.3rem;
+}
+
+:where(.companion-root) .activeSeatBanner strong {
+  color: #204e36;
+}
+
+:where(.companion-root) .activeSeatBanner p {
+  margin: .35rem 0 0;
+  color: #526d58;
+  font-size: .9rem;
+}
+
+:where(.companion-root) :focus-visible {
+  outline: 3px solid #b77a21;
+  outline-offset: 3px;
+}
+
+:where(.companion-root) .rowActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+:where(.companion-root) .statusBadge {
+  display: inline-block;
+  padding: .35rem .65rem;
+  border-radius: 999px;
+  background: #e3f0e5;
+  color: #205534;
+  font-size: .8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+:where(.companion-root) .statusBadge.unavailable {
+  background: #f1ece5;
+  color: #654d36;
+}
+
+:where(.companion-root) .availabilitySwitch {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  background: #8a948b;
+  flex: none;
+}
+
+:where(.companion-root) .availabilitySwitch[aria-checked=true] {
+  background: #245a40;
+}
+
+:where(.companion-root) .availabilitySwitch span {
+  display: block;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  transition: transform .18s;
+}
+
+:where(.companion-root) .availabilitySwitch[aria-checked=true] span {
+  transform: translateX(20px);
+}
+
+:where(.companion-root) .modalBackdrop {
+  z-index: 100;
+}
+
+:where(.companion-root) .modal .actions {
+  justify-content: flex-end;
+}
+
+:where(.companion-root) .form [aria-invalid=true] {
+  border-color: #9d2f2f;
+}
+
+@media (max-width: 650px) {
+  :where(.companion-root) .shell {
+    padding: 1.5rem 1rem;
+  }
+
+  :where(.companion-root) .navInner {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  :where(.companion-root) .navLinks {
+    gap: .8rem;
+  }
+
+  :where(.companion-root) .flowHeader,
+  :where(.companion-root) .sectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  :where(.companion-root) .steps {
+    gap: .4rem;
+  }
+
+  :where(.companion-root) .steps span {
+    font-size: .72rem;
+  }
+
+  :where(.companion-root) .dishGrid {
+    grid-template-columns: 1fr;
+  }
+
+  :where(.companion-root) .shell > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  :where(.companion-root) .tableWrap {
+    overflow: visible;
+    background: transparent;
+  }
+
+  :where(.companion-root) .tableWrap table,
+  :where(.companion-root) .tableWrap tbody,
+  :where(.companion-root) .tableWrap tr,
+  :where(.companion-root) .tableWrap td {
+    display: block;
+  }
+
+  :where(.companion-root) .tableWrap thead {
+    display: none;
+  }
+
+  :where(.companion-root) .tableWrap tr {
+    background: #fff;
+    border: 1px solid #e7e9df;
+    border-radius: 15px;
+    margin-bottom: 1rem;
+    padding: .5rem 1rem;
+  }
+
+  :where(.companion-root) .tableWrap td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: .7rem 0;
+    text-align: right;
+  }
+
+  :where(.companion-root) .tableWrap td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    text-align: left;
+  }
+
+  :where(.companion-root) .tableWrap td:last-child {
+    border: 0;
+  }
+
+  :where(.companion-root) .filters label,
+  :where(.companion-root) .filters input,
+  :where(.companion-root) .filters select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  :where(.companion-root) .form input,
+  :where(.companion-root) .form select,
+  :where(.companion-root) .form textarea {
+    min-width: 0;
+    width: 100%;
+  }
+
+  :where(.companion-root) .pagination {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.companion-root) *,
+  :where(.companion-root) *::before,
+  :where(.companion-root) *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

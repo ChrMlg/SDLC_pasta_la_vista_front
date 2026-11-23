@@ -51,8 +51,10 @@ export function OrderForm({ session, branchId }: { session: MenuSession; branchI
         body: JSON.stringify({ branchId, type, tableId: type === 'DINE_IN' ? tableId.trim() : null,
           items: selections.map(entry => ({ dishId: entry.dish.id, quantity: entry.quantity, note: entry.note || null })) }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message ?? 'No se pudo registrar el pedido');
+      const text = response.status === 204 ? '' : await response.text();
+      const data = text.trim() ? JSON.parse(text) as CreatedOrder & { message?: string } : null;
+      if (!response.ok) throw new Error(data?.message ?? 'No se pudo registrar el pedido');
+      if (!data) throw new Error('El servidor no devolvió los datos del pedido.');
       setCreated(data as CreatedOrder);
     } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo registrar el pedido'); }
     finally { setSaving(false); }

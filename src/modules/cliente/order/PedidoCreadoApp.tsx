@@ -3,13 +3,14 @@ import { COMPANION_ROUTES } from '../../../shared/module-bridges';
 import './cliente-order.css';
 
 interface PedidoCreadoProps {
-  onNavigate: (path: string) => void;
+  onNavigate: (path: string, data?: any) => void;
   createdData?: {
     order?: any;
     selectedBranch?: string;
     serviceType?: 'DINE_IN' | 'TAKEAWAY';
     tableNumber?: string;
     subtotal?: number;
+    paymentApproved?: boolean;
   };
 }
 
@@ -25,7 +26,22 @@ export function PedidoCreadoApp({ onNavigate, createdData }: PedidoCreadoProps) 
     (order.id ? `#${String(order.id).slice(0, 6).toUpperCase()}` : '#0107');
 
   const statusRaw = order.status || 'PENDING';
-  const statusLabel = statusRaw === 'PENDING' ? 'Pendiente · PENDING' : statusRaw;
+  const statusLabels: Record<string, string> = {
+    PENDING: 'Pendiente',
+    CONFIRMED: 'Confirmado',
+    QUEUED: 'En cola',
+    UNASSIGNED: 'Sin asignar',
+    PREPARING: 'En preparación',
+    IN_PREPARATION: 'En preparación',
+    IN_PROGRESS: 'En preparación',
+    TAKEN: 'En preparación',
+    READY: 'Listo',
+    OUT_FOR_DELIVERY: 'En camino',
+    PICKED_UP: 'Recogido',
+    DELIVERED: 'Entregado',
+    CANCELLED: 'Cancelado',
+  };
+  const statusLabel = statusLabels[statusRaw] ?? 'Estado desconocido';
 
   return (
     <div className="cliente-container">
@@ -51,7 +67,9 @@ export function PedidoCreadoApp({ onNavigate, createdData }: PedidoCreadoProps) 
           <h2 style={{ fontSize: '1.75rem', margin: '0.25rem 0' }}>
             Pedido {String(orderCode).startsWith('#') ? orderCode : `#${orderCode}`}
           </h2>
-          <p style={{ color: '#64748b', marginBottom: '1.25rem' }}>Estado: {statusLabel}</p>
+          <p style={{ color: '#64748b', marginBottom: '1.25rem' }}>
+            {createdData?.paymentApproved ? 'Pago aprobado' : `Estado: ${statusLabel}`}
+          </p>
 
           <div className="availability-box" style={{ textAlign: 'left', marginBottom: '1.25rem' }}>
             <div className="availability-row-detail" style={{ marginBottom: '0.5rem' }}>
@@ -65,19 +83,24 @@ export function PedidoCreadoApp({ onNavigate, createdData }: PedidoCreadoProps) 
             <div className="availability-row-detail">
               <span>Flujo operativo</span>
               <strong>
-                {isDineIn
-                  ? 'Comanda enviada a Cocina (Módulo 3)'
-                  : 'Pendiente de pago (PAID) en Módulo 6 para entrar a Cocina'}
+                {createdData?.paymentApproved
+                  ? 'Pago aprobado. Tu pedido ya fue enviado a cocina.'
+                  : isDineIn
+                  ? 'Tu pedido fue enviado a cocina.'
+                  : 'Pedido registrado. Cocina lo recibirá cuando se confirme el pago.'}
               </strong>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {!isDineIn && (
+            {!isDineIn && !createdData?.paymentApproved && (
               <button
                 type="button"
                 className="btn-primary-green"
-                onClick={() => onNavigate(COMPANION_ROUTES.billingCheckoutRoute(order.id))}
+                onClick={() => onNavigate(
+                  COMPANION_ROUTES.billingCheckoutRoute(order.id, order.branchId),
+                  createdData
+                )}
               >
                 Pagar pedido
               </button>

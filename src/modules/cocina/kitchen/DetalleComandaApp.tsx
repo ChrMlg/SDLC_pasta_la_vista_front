@@ -134,7 +134,21 @@ export function DetalleComandaApp({
                       : `#${order.orderId.slice(0, 6).toUpperCase()}`}
                   </h2>
                   <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                    {readyCount} listos · {pendingCount} pendientes · Estado: {order.status}
+                    {readyCount} listos · {pendingCount} pendientes · Estado: {{
+                      PENDING: 'Pendiente',
+                      CONFIRMED: 'Confirmado',
+                      QUEUED: 'En cola',
+                      UNASSIGNED: 'Sin asignar',
+                      PREPARING: 'En preparación',
+                      IN_PREPARATION: 'En preparación',
+                      IN_PROGRESS: 'En preparación',
+                      TAKEN: 'En preparación',
+                      READY: 'Listo',
+                      OUT_FOR_DELIVERY: 'En camino',
+                      DELIVERED: 'Entregado',
+                      PICKED_UP: 'Recogido',
+                      CANCELLED: 'Cancelado',
+                    }[order.status] ?? 'Estado desconocido'}
                   </span>
                 </div>
                 <span className="status-badge available">

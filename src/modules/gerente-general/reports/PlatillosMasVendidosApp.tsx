@@ -43,7 +43,7 @@ export function PlatillosMasVendidosApp() {
 
         <h1>Platillos más vendidos</h1>
         <p className="subtitle-desc">
-          Unidades vendidas en pedidos pagados (PAID) y no anulados.
+          Unidades vendidas en pedidos pagados y no anulados.
         </p>
 
         <div className="card-report-panel">

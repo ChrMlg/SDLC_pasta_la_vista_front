@@ -69,7 +69,7 @@ export function RevisarPedidoApp({ onNavigate, orderData }: RevisarPedidoProps) 
     } catch (err: any) {
       if (err?.code === 'CUSTOMER_TABLE_NOT_ASSIGNED') {
         setError(
-          'No tienes una mesa asignada vigente en esta sucursal (CUSTOMER_TABLE_NOT_ASSIGNED). Regresa y asigna tu mesa en Módulo 5.'
+          'No tienes una mesa asignada vigente en esta sucursal. Regresa y selecciona tu mesa antes de confirmar.'
         );
       } else {
         setError(err.message || 'No se pudo confirmar el pedido.');
@@ -104,7 +104,7 @@ export function RevisarPedidoApp({ onNavigate, orderData }: RevisarPedidoProps) 
             </div>
             <div className="availability-row-detail" style={{ marginBottom: '0.5rem' }}>
               <span>Modalidad</span>
-              <strong>{serviceType === 'DINE_IN' ? 'En mesa (DINE_IN)' : 'Para llevar (TAKEAWAY)'}</strong>
+              <strong>{serviceType === 'DINE_IN' ? 'En mesa' : 'Para llevar'}</strong>
             </div>
             {serviceType === 'DINE_IN' && (
               <div className="availability-row-detail">

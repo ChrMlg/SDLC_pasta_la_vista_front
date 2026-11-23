@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bistro — Pasta a la Vista (Frontend)
 
-## Getting Started
+Interfaz web del sistema de gestión para restaurantes con sucursales (catálogo, pedidos, cocina, reservaciones, inventario, pagos, lealtad, reseñas, notificaciones y reportes) diseñada para centralizar la operación diaria del restaurante y la atención a clientes.
 
-First, run the development server:
+**Proyecto asignado:** Bistro (Pasta a la Vista)
+**Curso:** Ingeniería de Software, UCA, ciclo 02/2026, Sección [01]
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Ambiente desplegado
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Componente | URL |
+|---|---|
+| Frontend | https://sdlc-pasta-la-vista-front-gray.vercel.app/ | v1.0.0 
+| Documentación de la API (Swagger) | https://practical-transformation-staging.up.railway.app/api/docs |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Los usuarios de prueba se entregan en Moodle, no en este repositorio.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Integrantes
 
-## Learn More
+| Nombre | Carnet | Usuario de GitHub | Módulos o historias principales |
+|---|---|---|---|
+| Ronald Francisco Rivas Diaz | 00131321 | @RonaldFRDiaz | Módulos 4, 5, 6, 7 y 8 Módulo 4: Reservaciones.  Módulo 5: Inventario  Módulo 6: Mesas y cobros/cierre   Módulo 7: Programa de lealtad / puntos.   Módulo 8: Reseñas |
+| Diego Armando Jacobo Cornejo| 00043719 | @DiegoJacob0 | Módulos 1, 2, 3, 9 y 10Módulo 1: Menú y catálogo.   Módulo 2: Pedidos y órdenes.   Módulo 3: Cocina y seguimiento.   Módulo 9: Notificaciones y avisos.   Módulo 10: Reportes y estadísticas. |
 
-To learn more about Next.js, take a look at the following resources:
+## Documentación
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Este proyecto cuenta con un repositorio separado para el backend (`https://github.com/ChrMlg/SDLC_pasta_la_vista.git`); la documentación completa del sistema y de la API se encuentra en el repositorio correspondiente al backend, mientras que este repositorio documenta la interfaz frontend desplegada en Vercel.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+#Tecnologías del Frontend
+Stack: React, TypeScript y Vite (src/main.tsx con AppShell y vistas por rol), con herencia previa de Next.js / create-next-app en el repositorio.
 
-## Deploy on Vercel
+Estilos y red: CSS modular por vista/módulo y cliente centralizado en src/shared/api-client.ts (/api, credentials: 'include', cache: 'no-store').
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#Vercel
+Proxy y sesión: vite.config.ts solo redirige /api en local, así que se agregó vercel.json para reenviar /api/:path* a [https://practical-transformation-staging.up.railway.app/api/:path](https://practical-transformation-staging.up.railway.app/api/:path)* y evitar bloqueos de cookies/CORS en producción.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Preset y rama: Se desplegó desde main y se cambió manualmente el Application Preset de Next.js a Vite (con salida en dist).
+

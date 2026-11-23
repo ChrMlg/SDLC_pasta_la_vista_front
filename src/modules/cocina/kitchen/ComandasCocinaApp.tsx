@@ -115,6 +115,10 @@ export function ComandasCocinaApp({ onNavigate, defaultBranchId }: ComandasCocin
 
           {loading ? (
             <div className="empty-column-state">Cargando comandas activas...</div>
+          ) : orders.length === 0 ? (
+            <div className="empty-column-state">
+              No hay comandas activas. Los pedidos para llevar aparecen aquí cuando se confirma su pago.
+            </div>
           ) : (
             <div className="kitchen-columns-grid">
               <div className="kitchen-column">
@@ -224,7 +228,7 @@ export function ComandasCocinaApp({ onNavigate, defaultBranchId }: ComandasCocin
           )}
 
           <div className="kitchen-notice-box">
-            Los pedidos para llevar (TAKEAWAY) solo ingresan a cocina cuando su pago está confirmado (PAID).
+            Los pedidos para llevar solo ingresan a cocina cuando el pago está confirmado.
           </div>
         </div>
       </main>

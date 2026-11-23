@@ -5,6 +5,7 @@ import {
   BranchTableInfo,
   COMPANION_ROUTES,
 } from '../../../shared/module-bridges';
+import { TABLE_STATUS_LABELS } from '../../../shared/table-status';
 import {
   assignCustomerTable,
   fetchAllCustomerOrderMenuItems,
@@ -96,7 +97,7 @@ export function ClientePedidoApp({
     } catch (err: any) {
       setError(
         err.message ||
-          'No se pudo asignar la mesa. Verifica el módulo de Selección de Mesa (Módulo 5).'
+          'No se pudo asignar la mesa. Selecciona una mesa disponible e inténtalo de nuevo.'
       );
     } finally {
       setAssigningTable(false);
@@ -218,14 +219,14 @@ export function ClientePedidoApp({
               className={`toggle-btn ${serviceType === 'DINE_IN' ? 'active' : ''}`}
               onClick={() => setServiceType('DINE_IN')}
             >
-              En mesa · DINE_IN
+              En mesa
             </button>
             <button
               type="button"
               className={`toggle-btn ${serviceType === 'TAKEAWAY' ? 'active' : ''}`}
               onClick={() => setServiceType('TAKEAWAY')}
             >
-              Para llevar · TAKEAWAY
+              Para llevar
             </button>
           </div>
 
@@ -261,7 +262,7 @@ export function ClientePedidoApp({
                       ) : (
                         tables.map((t) => (
                           <option key={t.id} value={t.id} disabled={t.status !== 'AVAILABLE'}>
-                            Mesa {String(t.number).padStart(2, '0')} · {t.status}
+                            Mesa {String(t.number).padStart(2, '0')} · {TABLE_STATUS_LABELS[t.status] ?? 'Estado desconocido'}
                           </option>
                         ))
                       )}
@@ -287,7 +288,7 @@ export function ClientePedidoApp({
             </div>
           ) : (
             <div className="info-banner">
-              Para llevar (<code>TAKEAWAY</code>): retiro en sucursal ({selectedBranchLabel}), no
+              Para llevar: retiro en sucursal ({selectedBranchLabel}), no
               requiere mesa y entra a cocina tras confirmar el pago
             </div>
           )}
