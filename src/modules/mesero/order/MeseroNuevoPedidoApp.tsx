@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BRANCHES, DEFAULT_BRANCH_ID } from '../../../shared/api-client';
 import {
+  BLOCKED_TABLE_STATUSES,
+  isOrderableTable,
+  TABLE_STATUS_LABELS,
+} from '../../../shared/table-status';
+import {
   fetchAllWaiterMenuItems,
   fetchBranchTables,
   createWaiterOrder,
   BranchTableOption,
 } from './mesero-order-api';
 import './mesero-order.css';
-
-const BLOCKED_TABLE_STATUSES = ['NEEDS_CLEANING', 'OUT_OF_SERVICE'];
-// TODO: Confirm whether the backend accepts orders at AVAILABLE tables before adding them here.
-const TABLE_STATUS_LABELS: Record<string, string> = {
-  AVAILABLE: 'Disponible',
-  OCCUPIED: 'Ocupada',
-  NEEDS_CLEANING: 'Por limpiar',
-  RESERVED: 'Reservada',
-  OUT_OF_SERVICE: 'Fuera de servicio',
-};
 
 interface OrderItem {
   id: string;
@@ -60,7 +55,7 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
 
       const [allMenuItems, branchTables] = await Promise.all([
         fetchAllWaiterMenuItems(branchId),
-        fetchBranchTables(branchId).catch(() => []),
+        fetchBranchTables(branchId),
       ]);
 
       setItems(
@@ -75,9 +70,7 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
       );
 
       setTables(branchTables);
-      const selectedTable = branchTables.find((table) => table.status === 'OCCUPIED')
-        || branchTables.find((table) => !BLOCKED_TABLE_STATUSES.includes(table.status ?? ''))
-        || branchTables[0];
+      const selectedTable = branchTables.find((table) => isOrderableTable(table.status));
       if (selectedTable) {
         setSelectedTableId(selectedTable.id);
       }
@@ -129,6 +122,10 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
 
   const subtotal = items.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0);
   const selectedCount = items.reduce((acc, item) => acc + item.quantity, 0);
+  const hasOccupiedTables = tables.some((table) => isOrderableTable(table.status));
+  const selectedTableIsOrderable = tables.some(
+    (table) => table.id === selectedTableId && isOrderableTable(table.status)
+  );
 
   const handleConfirmOrder = async () => {
     if (subtotal === 0) {
@@ -136,8 +133,10 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
       return;
     }
 
-    if (serviceType === 'DINE_IN' && !selectedTableId) {
-      setError('Selecciona una mesa válida de la sucursal para pedidos en mesa.');
+    if (serviceType === 'DINE_IN' && !selectedTableIsOrderable) {
+      setError(hasOccupiedTables
+        ? 'Selecciona una mesa ocupada para el pedido en mesa.'
+        : 'No hay mesas ocupadas. El cliente debe sentarse primero.');
       return;
     }
 
@@ -260,19 +259,25 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
                   disabled={tables.length === 0}
                 >
                   {tables.length === 0 ? (
-                    <option value="">Sin mesas disponibles</option>
+                    <option value="">Sin mesas registradas</option>
                   ) : (
                     tables.map((t) => (
                       <option
                         key={t.id}
                         value={t.id}
-                        disabled={BLOCKED_TABLE_STATUSES.includes(t.status ?? '')}
+                        disabled={
+                          BLOCKED_TABLE_STATUSES.includes(t.status ?? '')
+                          || !isOrderableTable(t.status)
+                        }
                       >
-                        {t.label} · {TABLE_STATUS_LABELS[t.status ?? ''] ?? t.status ?? 'Estado desconocido'}
+                        {t.label} · {(TABLE_STATUS_LABELS[t.status ?? ''] ?? t.status) || 'Estado desconocido'}
                       </option>
                     ))
                   )}
                 </select>
+                {!loading && !error && !hasOccupiedTables && (
+                  <p role="status">No hay mesas ocupadas. El cliente debe sentarse primero.</p>
+                )}
               </div>
               <div />
             </div>
@@ -382,7 +387,11 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
             <button
               type="button"
               className="btn-primary-green btn-full"
-              disabled={submitting || subtotal === 0}
+              disabled={
+                submitting
+                || subtotal === 0
+                || (serviceType === 'DINE_IN' && !selectedTableIsOrderable)
+              }
               onClick={handleConfirmOrder}
               style={{
                 background: '#059669',

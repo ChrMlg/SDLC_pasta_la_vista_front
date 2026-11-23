@@ -8,6 +8,7 @@ import { GerenteMenuApp } from './modules/gerente/menu/GerenteMenuApp';
 import { NuevoPlatilloForm } from './modules/gerente/menu/NuevoPlatilloForm';
 import { ConfirmarDisponibilidad } from './modules/gerente/menu/ConfirmarDisponibilidad';
 import { ClienteMenuApp } from './modules/cliente/menu/ClienteMenuApp';
+import { EstadoMesasApp } from './modules/tables/EstadoMesasApp';
 
 // Módulo 2: Pedidos
 import { MeseroNuevoPedidoApp } from './modules/mesero/order/MeseroNuevoPedidoApp';
@@ -152,6 +153,13 @@ function AppShell() {
               >
                 Inventario
               </button>
+              <button
+                type="button"
+                style={navButtonStyle(currentPath === '/management/tables')}
+                onClick={() => handleNavigate('/management/tables')}
+              >
+                Estado de mesas
+              </button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/reservations')}
                 onClick={() => handleNavigate('/management/reservations')}>Reservaciones</button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/ratings')}
@@ -190,6 +198,13 @@ function AppShell() {
                 onClick={() => handleNavigate('/waiter/billing')}
               >
                 Cuentas / Cobro
+              </button>
+              <button
+                type="button"
+                style={navButtonStyle(currentPath === '/waiter/tables')}
+                onClick={() => handleNavigate('/waiter/tables')}
+              >
+                Estado de mesas
               </button>
               <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reviews')}
                 onClick={() => handleNavigate('/reviews')}>Reseñas</button>
@@ -349,6 +364,9 @@ function AppShell() {
               defaultBranchId={session.branchId}
             />
           )}
+          {currentPath === '/management/tables' && (
+            <EstadoMesasApp branchId={session.branchId} />
+          )}
           {currentPath === '/management/menu/new' && (
             <NuevoPlatilloForm
               onNavigate={handleNavigate}
@@ -375,6 +393,9 @@ function AppShell() {
               onNavigate={handleNavigate}
               defaultBranchId={session.branchId}
             />
+          )}
+          {currentPath === '/waiter/tables' && (
+            <EstadoMesasApp branchId={session.branchId} />
           )}
           {currentPath === '/waiter/orders' && (
             <PedidosAvisosMeseroApp
