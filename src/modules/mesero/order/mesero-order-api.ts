@@ -28,6 +28,14 @@ export interface CreateOrderPayload {
   }[];
 }
 
+function isInactiveTableError(error: unknown): boolean {
+  const apiError = error as { code?: unknown; message?: unknown };
+  const code = typeof apiError?.code === 'string' ? apiError.code.toUpperCase() : '';
+  const message = typeof apiError?.message === 'string' ? apiError.message.toLowerCase() : '';
+  return /TABLE.*(?:INACTIVE|NOT_ACTIVE)|(?:INACTIVE|NOT_ACTIVE).*TABLE/.test(code)
+    || /(?:mesa.*(?:inactiva|no est[aá] activa)|table.*(?:inactive|not active))/.test(message);
+}
+
 export async function fetchAllWaiterMenuItems(branchId: string): Promise<PublicMenuItem[]> {
   let allItems: PublicMenuItem[] = [];
   let currentPage = 1;
@@ -100,8 +108,16 @@ export async function createWaiterOrder(payload: CreateOrderPayload) {
     apiBody.tableId = payload.tableId;
   }
 
-  return apiRequest('/orders', {
-    method: 'POST',
-    body: JSON.stringify(apiBody),
-  });
+  try {
+    return await apiRequest('/orders', {
+      method: 'POST',
+      body: JSON.stringify(apiBody),
+    });
+  } catch (error) {
+    if (isInactiveTableError(error)) {
+      console.warn('El servidor rechazó el pedido porque la mesa no está activa:', error);
+      throw new Error('Esta mesa no está activa. Elige una mesa ocupada o pide al cliente que se siente primero.');
+    }
+    throw error;
+  }
 }

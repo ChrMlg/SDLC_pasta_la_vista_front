@@ -23,11 +23,16 @@ export function RetirarEntregaApp({ onNavigate, selectedOrder }: RetirarEntregaP
   const isKitchenReady = ['READY', 'PICKED_UP', 'DELIVERED'].includes(status);
   const isPickedUp = ['PICKED_UP', 'DELIVERED'].includes(status);
   const isDelivered = status === 'DELIVERED';
+  const statusLabels: Record<string, string> = {
+    READY: 'Listo',
+    PICKED_UP: 'Recogido',
+    DELIVERED: 'Entregado',
+  };
 
   const handleConfirmPickup = async () => {
     if (!selectedOrder) return;
     if (!isKitchenReady) {
-      setError('La comanda debe estar en estado READY en cocina antes de retirar.');
+      setError('La comanda debe estar lista en cocina antes de retirarla.');
       return;
     }
 
@@ -78,7 +83,7 @@ export function RetirarEntregaApp({ onNavigate, selectedOrder }: RetirarEntregaP
 
         <h1>Confirmación de retirar y entrega</h1>
         <p className="subtitle-desc">
-          Flujo secuencial: 1. Cocina terminó (READY) → 2. Pedido recogido → 3. Entregado al cliente.
+          Flujo secuencial: 1. Cocina terminó → 2. Pedido recogido → 3. Entregado al cliente.
         </p>
 
         <div className="card-track-panel">
@@ -122,18 +127,18 @@ export function RetirarEntregaApp({ onNavigate, selectedOrder }: RetirarEntregaP
                       : `#${selectedOrder.id.slice(0, 6).toUpperCase()}`}
                   </h2>
                 </div>
-                <span className="status-pill ready">{status}</span>
+                <span className="status-pill ready">{statusLabels[status] ?? 'Estado desconocido'}</span>
               </div>
 
               <div className="delivery-steps-list">
                 <div className={`delivery-step-card ${isKitchenReady ? 'step-done' : ''}`}>
                   <div className="step-card-header">
                     <span className="step-card-title">1. Cocina terminó</span>
-                    <span className="status-pill ready">READY</span>
+                    <span className="status-pill ready">Listo</span>
                   </div>
                   <p className="step-card-desc">
                     {isKitchenReady
-                      ? 'Comanda lista (READY) en barra de cocina.'
+                      ? 'Comanda lista en la barra de cocina.'
                       : 'Aún en preparación en cocina.'}
                   </p>
                 </div>
@@ -141,7 +146,7 @@ export function RetirarEntregaApp({ onNavigate, selectedOrder }: RetirarEntregaP
                 <div className={`delivery-step-card ${isPickedUp ? 'step-done' : ''}`}>
                   <div className="step-card-header">
                     <span className="step-card-title">2. Pedido recogido</span>
-                    <span className="status-pill delivery">PICKED_UP</span>
+                    <span className="status-pill delivery">Recogido</span>
                   </div>
                   <p className="step-card-desc">
                     El mesero retira los platillos listos de cocina.
@@ -163,7 +168,7 @@ export function RetirarEntregaApp({ onNavigate, selectedOrder }: RetirarEntregaP
                 <div className={`delivery-step-card ${isDelivered ? 'step-done' : ''}`}>
                   <div className="step-card-header">
                     <span className="step-card-title">3. Entrega al cliente</span>
-                    <span className="status-pill ready">DELIVERED</span>
+                    <span className="status-pill ready">Entregado</span>
                   </div>
                   <p className="step-card-desc">
                     Entrega final en mesa o retiro en mostrador.

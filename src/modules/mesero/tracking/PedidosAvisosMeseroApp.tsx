@@ -72,6 +72,24 @@ export function PedidosAvisosMeseroApp({ onNavigate, defaultBranchId }: PedidosA
     return 'status-pill';
   };
 
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      PENDING: 'Pendiente',
+      CONFIRMED: 'Confirmado',
+      QUEUED: 'En cola',
+      UNASSIGNED: 'Sin asignar',
+      PREPARING: 'En preparación',
+      IN_PREPARATION: 'En preparación',
+      IN_PROGRESS: 'En preparación',
+      TAKEN: 'En preparación',
+      READY: 'Listo',
+      DELIVERED: 'Entregado',
+      PICKED_UP: 'Recogido',
+      CANCELLED: 'Cancelado',
+    };
+    return labels[String(status || '').toUpperCase()] ?? 'Estado desconocido';
+  };
+
   return (
     <div className="mesero-track-container">
       <header className="mesero-track-header">
@@ -172,7 +190,7 @@ export function PedidosAvisosMeseroApp({ onNavigate, defaultBranchId }: PedidosA
                       {getServiceLabel(order)}
                     </div>
                     <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      <span className={getStatusPillClass(order.status)}>{order.status}</span>
+                      <span className={getStatusPillClass(order.status)}>{getStatusLabel(order.status)}</span>
                       <button
                         type="button"
                         className="btn-primary-green"

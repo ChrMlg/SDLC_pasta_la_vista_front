@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { apiRequest, SessionProfile, UserRole } from '../../shared/api-client';
 import './auth.css';
 
 interface LoginAppProps {
   onLoginSuccess: (profile: SessionProfile) => void;
+  onOpenRegister?: () => void;
+  initialEmail?: string;
+  initialNotice?: string;
 }
 
 function inferRoleFromEmail(email: string): UserRole {
@@ -15,15 +18,30 @@ function inferRoleFromEmail(email: string): UserRole {
   return 'CUSTOMER';
 }
 
-export function LoginApp({ onLoginSuccess }: LoginAppProps) {
-  const [email, setEmail] = useState('');
+export function LoginApp({
+  onLoginSuccess,
+  onOpenRegister,
+  initialEmail = '',
+  initialNotice = '',
+}: LoginAppProps) {
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState(initialNotice);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialEmail) setEmail(initialEmail);
+  }, [initialEmail]);
+
+  useEffect(() => {
+    if (initialNotice) setNotice(initialNotice);
+  }, [initialNotice]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNotice('');
     setLoading(true);
 
     try {
@@ -35,7 +53,7 @@ export function LoginApp({ onLoginSuccess }: LoginAppProps) {
       const user = data?.user || data?.data || data;
       let role: UserRole | undefined = user?.role;
       let branchId: string | null = user?.branchId ?? null;
-      let userId: string | undefined = user?.id;
+      let userId: string | undefined = user?.id ?? user?.userId;
 
       if (!role) {
         try {
@@ -43,7 +61,7 @@ export function LoginApp({ onLoginSuccess }: LoginAppProps) {
           const meUser = me?.user || me?.data || me;
           role = meUser?.role;
           branchId = meUser?.branchId ?? branchId;
-          userId = meUser?.id ?? userId;
+          userId = meUser?.id ?? meUser?.userId ?? userId;
         } catch {
           // Si /auth/me no está disponible, se infiere el rol
         }
@@ -93,7 +111,16 @@ export function LoginApp({ onLoginSuccess }: LoginAppProps) {
           <h2 className="auth-title">Entra a tu cuenta</h2>
           <p className="auth-subtitle">Accede a tus pedidos y herramientas de trabajo.</p>
 
-          {error && <div className="auth-error">{error}</div>}
+          {notice && (
+            <div className="auth-notice" role="status">
+              {notice}
+            </div>
+          )}
+          {error && (
+            <div className="auth-error" role="alert">
+              {error}
+            </div>
+          )}
 
           <div className="auth-field">
             <label htmlFor="login-email">Correo electrónico</label>
@@ -123,9 +150,21 @@ export function LoginApp({ onLoginSuccess }: LoginAppProps) {
             {loading ? 'Ingresando...' : 'Iniciar sesión →'}
           </button>
 
-          <p className="auth-note">
-            El rol se determina en el servidor, nunca se selecciona en este formulario.
-          </p>
+          {onOpenRegister && (
+            <p className="auth-note">
+              ¿Eres cliente nuevo?{' '}
+              <button
+                type="button"
+                className="auth-link-btn"
+                onClick={() => {
+                  setError('');
+                  onOpenRegister();
+                }}
+              >
+                Crear cuenta de cliente
+              </button>
+            </p>
+          )}
         </form>
       </main>
     </div>

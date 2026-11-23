@@ -8,6 +8,16 @@ import {
 } from './mesero-order-api';
 import './mesero-order.css';
 
+const BLOCKED_TABLE_STATUSES = ['NEEDS_CLEANING', 'OUT_OF_SERVICE'];
+// TODO: Confirm whether the backend accepts orders at AVAILABLE tables before adding them here.
+const TABLE_STATUS_LABELS: Record<string, string> = {
+  AVAILABLE: 'Disponible',
+  OCCUPIED: 'Ocupada',
+  NEEDS_CLEANING: 'Por limpiar',
+  RESERVED: 'Reservada',
+  OUT_OF_SERVICE: 'Fuera de servicio',
+};
+
 interface OrderItem {
   id: string;
   name: string;
@@ -65,8 +75,11 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
       );
 
       setTables(branchTables);
-      if (branchTables.length > 0) {
-        setSelectedTableId(branchTables[0].id);
+      const selectedTable = branchTables.find((table) => table.status === 'OCCUPIED')
+        || branchTables.find((table) => !BLOCKED_TABLE_STATUSES.includes(table.status ?? ''))
+        || branchTables[0];
+      if (selectedTable) {
+        setSelectedTableId(selectedTable.id);
       }
     } catch (err: any) {
       setItems([]);
@@ -231,8 +244,8 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
                 value={serviceType}
                 onChange={(e) => setServiceType(e.target.value as 'DINE_IN' | 'TAKEAWAY')}
               >
-                <option value="DINE_IN">En mesa · DINE_IN</option>
-                <option value="TAKEAWAY">Para llevar · TAKEAWAY</option>
+                <option value="DINE_IN">En mesa</option>
+                <option value="TAKEAWAY">Para llevar</option>
               </select>
             </div>
           </div>
@@ -250,8 +263,12 @@ export function MeseroNuevoPedidoApp({ onNavigate, defaultBranchId }: MeseroNuev
                     <option value="">Sin mesas disponibles</option>
                   ) : (
                     tables.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.label}
+                      <option
+                        key={t.id}
+                        value={t.id}
+                        disabled={BLOCKED_TABLE_STATUSES.includes(t.status ?? '')}
+                      >
+                        {t.label} · {TABLE_STATUS_LABELS[t.status ?? ''] ?? t.status ?? 'Estado desconocido'}
                       </option>
                     ))
                   )}

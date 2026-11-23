@@ -45,7 +45,7 @@ export function StarsDisplay({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map(star => {
         const fill = Math.max(0, Math.min(1, clampedRating - star + 1)) * 100;
         return <span className="reviewStarGlyph" key={star}
-          style={{ background: `linear-gradient(90deg, #b77a21 ${fill}%, #d7ddd7 ${fill}%)` }}>★</span>;
+          style={{ backgroundImage: `linear-gradient(90deg, #b77a21 ${fill}%, #d7ddd7 ${fill}%)` }}>★</span>;
       })}
     </span>
   </span>;

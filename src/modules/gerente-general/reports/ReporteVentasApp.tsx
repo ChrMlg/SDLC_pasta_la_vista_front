@@ -59,7 +59,7 @@ export function ReporteVentasApp({
 
         <h1>Reporte de ventas por sucursal</h1>
         <p className="subtitle-desc">
-          Totales aprobados (IVA incluido) y cantidad de pedidos PAID por sucursal.
+          Totales aprobados (IVA incluido) y cantidad de pedidos pagados por sucursal.
         </p>
 
         <div className="card-report-panel">
@@ -92,7 +92,7 @@ export function ReporteVentasApp({
               <div className="metric-value-lg">${totalSales.toFixed(2)}</div>
             </div>
             <div className="metric-card-box">
-              <span className="metric-desc">Pedidos pagados (PAID)</span>
+              <span className="metric-desc">Pedidos pagados</span>
               <div className="metric-value-lg">{totalOrders}</div>
             </div>
           </div>

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { SessionProfile } from './shared/api-client';
+import { SessionProfile, syncBranchesFromApi } from './shared/api-client';
 import { LoginApp } from './modules/auth/LoginApp';
+import { RegisterCustomerApp } from './modules/auth/ResgisterCustomerApp';
 import './app.css';
 
-// Módulo 1: Menú Digital y Catálogo (H1, H2, H3)
+// Módulo 1: Menú y Catálogo
 import { GerenteMenuApp } from './modules/gerente/menu/GerenteMenuApp';
 import { NuevoPlatilloForm } from './modules/gerente/menu/NuevoPlatilloForm';
 import { ConfirmarDisponibilidad } from './modules/gerente/menu/ConfirmarDisponibilidad';
@@ -16,7 +17,7 @@ import { ClientePedidoApp } from './modules/cliente/order/ClientePedidoApp';
 import { RevisarPedidoApp } from './modules/cliente/order/RevisarPedidoApp';
 import { PedidoCreadoApp } from './modules/cliente/order/PedidoCreadoApp';
 
-// Módulo 3: Cocina y Entrega (H6, H7, H8, H9)
+// Cocina y Seguimiento de Mesero
 import { ComandasCocinaApp } from './modules/cocina/kitchen/ComandasCocinaApp';
 import { DetalleComandaApp } from './modules/cocina/kitchen/DetalleComandaApp';
 import { PlatillosComandaApp } from './modules/cocina/items/PlatillosComandaApp';
@@ -38,10 +39,9 @@ import { PlatillosMasVendidosApp } from './modules/gerente-general/reports/Plati
 import { HorariosDemandaApp } from './modules/gerente-general/reports/HorariosDemandaApp';
 import { SucursalesAtencionApp } from './modules/gerente-general/reports/SucursalesAtencionApp';
 
+// Companion / Rutas compartidas
 import { CompanionApp } from './modules/companion/CompanionApp';
 import { isCompanionPath } from './modules/companion/companion-routes';
-// Placeholders de módulos del compañero (Módulos 4, 5, 6, 7, 8)
-import { CompanionModulePlaceholder } from './modules/companion-placeholders/CompanionModulePlaceholder';
 
 function getDefaultRouteForRole(role: SessionProfile['role']): string {
   switch (role) {
@@ -60,75 +60,99 @@ function getDefaultRouteForRole(role: SessionProfile['role']): string {
   }
 }
 
+function normalizePath(path: string): string {
+  return path.split(/[?#]/)[0] || '/';
+}
+
+function navButtonClass(active: boolean): string {
+  return active ? 'app-nav-btn app-nav-btn--active' : 'app-nav-btn';
+}
+
 function AppShell() {
   const [session, setSession] = useState<SessionProfile | null>(null);
+  const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  const [prefilledLoginEmail, setPrefilledLoginEmail] = useState('');
+  const [loginNotice, setLoginNotice] = useState('');
   const [currentPath, setCurrentPath] = useState('/management/menu');
   const [routeParams, setRouteParams] = useState<any>(null);
   const [navNonce, setNavNonce] = useState(0);
   const [selectedWaiterOrder, setSelectedWaiterOrder] =
     useState<WaiterOrderNotification | null>(null);
 
-  const handleLoginSuccess = (profile: SessionProfile) => {
+  const cleanPath = normalizePath(currentPath);
+
+  const handleLoginSuccess = async (profile: SessionProfile) => {
+    await syncBranchesFromApi();
     setSession(profile);
+    setLoginNotice('');
+    setRouteParams(null);
+    setSelectedWaiterOrder(null);
     setCurrentPath(getDefaultRouteForRole(profile.role));
   };
 
+  const handleLogout = () => {
+    setSession(null);
+    setAuthView('login');
+    setLoginNotice('');
+    setRouteParams(null);
+    setSelectedWaiterOrder(null);
+    setCurrentPath('/management/menu');
+  };
+
   const handleNavigate = (path: string, params?: any) => {
-    setNavNonce(n => n + 1);
-    if (params !== undefined) {
-      setRouteParams(params);
-      if (path.includes('/waiter/orders/deliver')) {
-        if (typeof params === 'object' && params !== null) {
-          setSelectedWaiterOrder(params);
-        } else if (typeof params === 'string') {
-          setSelectedWaiterOrder({
-            id: params,
-            orderNumber: params,
-            status: 'READY',
-          } as any);
-        }
+    setNavNonce((n) => n + 1);
+    setRouteParams(params !== undefined ? params : null);
+
+    if (path.includes('/waiter/orders/deliver')) {
+      if (typeof params === 'object' && params !== null) {
+        setSelectedWaiterOrder(params);
+      } else if (typeof params === 'string') {
+        setSelectedWaiterOrder({
+          id: params,
+          orderNumber: params,
+          status: 'READY',
+        } as any);
       }
     }
+
     setCurrentPath(path);
   };
 
   if (!session) {
-    return <LoginApp onLoginSuccess={handleLoginSuccess} />;
+    if (authView === 'register') {
+      return (
+        <RegisterCustomerApp
+          onBackToLogin={(registeredEmail, noticeMessage) => {
+            if (registeredEmail) setPrefilledLoginEmail(registeredEmail);
+            if (noticeMessage) setLoginNotice(noticeMessage);
+            setAuthView('login');
+          }}
+        />
+      );
+    }
+
+    return (
+      <LoginApp
+        onLoginSuccess={(profile) => {
+          void handleLoginSuccess(profile);
+        }}
+        onOpenRegister={() => {
+          setLoginNotice('');
+          setAuthView('register');
+        }}
+        initialEmail={prefilledLoginEmail}
+        initialNotice={loginNotice}
+      />
+    );
   }
 
   const role = session.role;
 
-  const navButtonStyle = (active: boolean): React.CSSProperties => ({
-    background: active ? 'linear-gradient(135deg, #17684a, #0f5138)' : 'transparent',
-    border: `1px solid ${active ? '#2d7a5b' : '#3c4b61'}`,
-    color: '#ffffff',
-    padding: '0.48rem 0.78rem',
-    borderRadius: '999px',
-    cursor: 'pointer',
-    fontSize: '0.82rem',
-    fontWeight: 650,
-    letterSpacing: '0.01em',
-    boxShadow: active ? '0 4px 12px rgba(52, 211, 153, 0.14)' : 'none',
-  });
-
   return (
-    <div>
-      <nav
-        style={{
-          background: 'linear-gradient(135deg, #10291d, #0f172a)',
-          color: '#ffffff',
-          padding: '0.75rem 1.5rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '0.75rem',
-          flexWrap: 'wrap',
-          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.16)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        }}
-      >
-        <div style={{ display: 'flex', gap: '0.55rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 700, color: '#34d399', marginRight: '0.4rem' }}>
+    <div className="app-shell">
+      <nav className="app-nav">
+        <div className="app-nav-links">
+          <span className="app-brand-badge">
             Pasta la Vista · {role}
           </span>
 
@@ -136,31 +160,46 @@ function AppShell() {
             <>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/management/menu')}
+                className={navButtonClass(cleanPath === '/management/menu')}
                 onClick={() => handleNavigate('/management/menu')}
               >
                 Menú sucursal
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/management/menu/new')}
+                className={navButtonClass(cleanPath === '/management/menu/new')}
                 onClick={() => handleNavigate('/management/menu/new')}
               >
                 Nuevo platillo
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/management/inventory')}
+                className={navButtonClass(cleanPath === '/management/inventory')}
                 onClick={() => handleNavigate('/management/inventory')}
               >
-                Inventario (Mód. 7)
+                Inventario
               </button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/reservations')}
-                onClick={() => handleNavigate('/management/reservations')}>Reservaciones (Mód. 5)</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/ratings')}
-                onClick={() => handleNavigate('/management/ratings')}>Calificaciones (Mód. 8)</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reviews')}
-                onClick={() => handleNavigate('/reviews')}>Reseñas</button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/management/reservations')}
+                onClick={() => handleNavigate('/management/reservations')}
+              >
+                Reservaciones
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/management/ratings')}
+                onClick={() => handleNavigate('/management/ratings')}
+              >
+                Calificaciones
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/reviews')}
+                onClick={() => handleNavigate('/reviews')}
+              >
+                Reseñas
+              </button>
             </>
           )}
 
@@ -168,34 +207,39 @@ function AppShell() {
             <>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/waiter/orders/new')}
+                className={navButtonClass(cleanPath === '/waiter/orders/new')}
                 onClick={() => handleNavigate('/waiter/orders/new')}
               >
                 Tomar pedido
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/waiter/orders')}
+                className={navButtonClass(cleanPath === '/waiter/orders')}
                 onClick={() => handleNavigate('/waiter/orders')}
               >
                 Seguimiento / Entrega
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/notifications')}
+                className={navButtonClass(cleanPath === '/notifications')}
                 onClick={() => handleNavigate('/notifications')}
               >
                 Notificaciones
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/waiter/billing')}
+                className={navButtonClass(cleanPath === '/waiter/billing')}
                 onClick={() => handleNavigate('/waiter/billing')}
               >
-                Cuentas / Cobro (Mód. 6)
+                Cuentas / Cobro
               </button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reviews')}
-                onClick={() => handleNavigate('/reviews')}>Reseñas (Mód. 8)</button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/reviews')}
+                onClick={() => handleNavigate('/reviews')}
+              >
+                Reseñas
+              </button>
             </>
           )}
 
@@ -203,17 +247,17 @@ function AppShell() {
             <>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/branches/menu')}
+                className={navButtonClass(cleanPath === '/branches/menu')}
                 onClick={() => handleNavigate('/branches/menu')}
               >
                 Ver menú
               </button>
               <button
                 type="button"
-                style={navButtonStyle(
-                  currentPath === '/orders/new' ||
-                    currentPath === '/orders/review' ||
-                    currentPath === '/my-orders'
+                className={navButtonClass(
+                  cleanPath === '/orders/new' ||
+                    cleanPath === '/orders/review' ||
+                    cleanPath === '/my-orders'
                 )}
                 onClick={() => handleNavigate('/orders/new')}
               >
@@ -221,23 +265,53 @@ function AppShell() {
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/notifications')}
+                className={navButtonClass(cleanPath === '/notifications')}
                 onClick={() => handleNavigate('/notifications')}
               >
                 Notificaciones
               </button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/seating')}
-                onClick={() => handleNavigate('/seating')}>Mesa (Mód. 4)</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reservations')}
-                onClick={() => handleNavigate('/reservations')}>Reservar (Mód. 5)</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-reservations')}
-                onClick={() => handleNavigate('/my-reservations')}>Mis reservas</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-receipts')}
-                onClick={() => handleNavigate('/my-receipts')}>Comprobantes (Mód. 6)</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-reviews')}
-                onClick={() => handleNavigate('/my-reviews')}>Calificar (Mód. 8)</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/my-loyalty')}
-                onClick={() => handleNavigate('/my-loyalty')}>Mis puntos</button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/seating')}
+                onClick={() => handleNavigate('/seating')}
+              >
+                Mesa
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/reservations')}
+                onClick={() => handleNavigate('/reservations')}
+              >
+                Reservar
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/my-reservations')}
+                onClick={() => handleNavigate('/my-reservations')}
+              >
+                Mis reservas
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/my-receipts')}
+                onClick={() => handleNavigate('/my-receipts')}
+              >
+                Comprobantes
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/my-reviews')}
+                onClick={() => handleNavigate('/my-reviews')}
+              >
+                Calificar
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/my-loyalty')}
+                onClick={() => handleNavigate('/my-loyalty')}
+              >
+                Mis puntos
+              </button>
             </>
           )}
 
@@ -245,28 +319,28 @@ function AppShell() {
             <>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/kitchen')}
+                className={navButtonClass(cleanPath === '/kitchen')}
                 onClick={() => handleNavigate('/kitchen')}
               >
                 Comandas
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/kitchen/detail')}
+                className={navButtonClass(cleanPath === '/kitchen/detail')}
                 onClick={() => handleNavigate('/kitchen/detail')}
               >
                 Tomar / Liberar
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/kitchen/items')}
+                className={navButtonClass(cleanPath === '/kitchen/items')}
                 onClick={() => handleNavigate('/kitchen/items')}
               >
                 Platillos listos
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/kitchen/notifications')}
+                className={navButtonClass(cleanPath === '/kitchen/notifications')}
                 onClick={() => handleNavigate('/kitchen/notifications')}
               >
                 Avisos de cocina
@@ -278,66 +352,82 @@ function AppShell() {
             <>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/reports/sales')}
+                className={navButtonClass(cleanPath === '/reports/sales')}
                 onClick={() => handleNavigate('/reports/sales')}
               >
                 Ventas
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/reports/comparison')}
+                className={navButtonClass(cleanPath === '/reports/comparison')}
                 onClick={() => handleNavigate('/reports/comparison')}
               >
                 Comparativa
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/reports/top-dishes')}
+                className={navButtonClass(cleanPath === '/reports/top-dishes')}
                 onClick={() => handleNavigate('/reports/top-dishes')}
               >
                 Top platillos
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/reports/peak-hours')}
+                className={navButtonClass(cleanPath === '/reports/peak-hours')}
                 onClick={() => handleNavigate('/reports/peak-hours')}
               >
                 Horarios
               </button>
               <button
                 type="button"
-                style={navButtonStyle(currentPath === '/reports/performance')}
+                className={navButtonClass(cleanPath === '/reports/performance')}
                 onClick={() => handleNavigate('/reports/performance')}
               >
                 Atención
               </button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/reservations')}
-                onClick={() => handleNavigate('/management/reservations')}>Reservaciones</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/inventory')}
-                onClick={() => handleNavigate('/management/inventory')}>Inventario</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/ratings')}
-                onClick={() => handleNavigate('/management/ratings')}>Calificaciones</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/reviews')}
-                onClick={() => handleNavigate('/reviews')}>Reseñas</button>
-              <button type="button" style={navButtonStyle(currentPath.split(/[?#]/)[0] === '/management/loyalty')}
-                onClick={() => handleNavigate('/management/loyalty')}>Lealtad</button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/management/reservations')}
+                onClick={() => handleNavigate('/management/reservations')}
+              >
+                Reservaciones
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/management/inventory')}
+                onClick={() => handleNavigate('/management/inventory')}
+              >
+                Inventario
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/management/ratings')}
+                onClick={() => handleNavigate('/management/ratings')}
+              >
+                Calificaciones
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/reviews')}
+                onClick={() => handleNavigate('/reviews')}
+              >
+                Reseñas
+              </button>
+              <button
+                type="button"
+                className={navButtonClass(cleanPath === '/management/loyalty')}
+                onClick={() => handleNavigate('/management/loyalty')}
+              >
+                Lealtad
+              </button>
             </>
           )}
         </div>
 
         <button
           type="button"
-          style={{
-            background: '#dc2626',
-            border: 'none',
-            color: '#ffffff',
-            padding: '0.35rem 0.75rem',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-          }}
-          onClick={() => setSession(null)}
+          className="app-logout-btn"
+          onClick={handleLogout}
         >
           Cambiar usuario
         </button>
@@ -346,19 +436,19 @@ function AppShell() {
       {/* Vistas MANAGER */}
       {role === 'MANAGER' && (
         <>
-          {currentPath === '/management/menu' && (
+          {cleanPath === '/management/menu' && (
             <GerenteMenuApp
               onNavigate={handleNavigate}
               defaultBranchId={session.branchId}
             />
           )}
-          {currentPath === '/management/menu/new' && (
+          {cleanPath === '/management/menu/new' && (
             <NuevoPlatilloForm
               onNavigate={handleNavigate}
               defaultBranchId={routeParams?.branchId || session.branchId}
             />
           )}
-          {currentPath.includes('/availability') && (
+          {cleanPath.includes('/availability') && (
             <ConfirmarDisponibilidad
               branchId={routeParams?.branchId || session.branchId || undefined}
               itemId={routeParams?.itemId}
@@ -373,28 +463,30 @@ function AppShell() {
       {/* Vistas WAITER */}
       {role === 'WAITER' && (
         <>
-          {currentPath === '/waiter/orders/new' && (
+          {cleanPath === '/waiter/orders/new' && (
             <MeseroNuevoPedidoApp
               onNavigate={handleNavigate}
               defaultBranchId={session.branchId}
             />
           )}
-          {currentPath === '/waiter/orders' && (
+          {cleanPath === '/waiter/orders' && (
             <PedidosAvisosMeseroApp
               onNavigate={handleNavigate}
               defaultBranchId={session.branchId}
             />
           )}
-          {(currentPath === '/waiter/orders/delivery' ||
-            currentPath === '/waiter/orders/deliver') && (
+          {(cleanPath === '/waiter/orders/delivery' ||
+            cleanPath === '/waiter/orders/deliver') && (
             <RetirarEntregaApp
               onNavigate={handleNavigate}
-              selectedOrder={selectedWaiterOrder
-                ? { ...selectedWaiterOrder, type: selectedWaiterOrder.type ?? 'TAKEAWAY' }
-                : null}
+              selectedOrder={
+                selectedWaiterOrder
+                  ? { ...selectedWaiterOrder, type: selectedWaiterOrder.type ?? 'TAKEAWAY' }
+                  : null
+              }
             />
           )}
-          {currentPath === '/notifications' && (
+          {cleanPath === '/notifications' && (
             <MeseroNotificacionesApp onNavigate={handleNavigate} />
           )}
         </>
@@ -403,19 +495,19 @@ function AppShell() {
       {/* Vistas CUSTOMER */}
       {role === 'CUSTOMER' && (
         <>
-          {currentPath === '/branches/menu' && (
+          {cleanPath === '/branches/menu' && (
             <ClienteMenuApp onNavigate={handleNavigate} />
           )}
-          {currentPath === '/orders/new' && (
+          {cleanPath === '/orders/new' && (
             <ClientePedidoApp onNavigate={handleNavigate} />
           )}
-          {currentPath === '/orders/review' && (
+          {cleanPath === '/orders/review' && (
             <RevisarPedidoApp onNavigate={handleNavigate} orderData={routeParams} />
           )}
-          {currentPath === '/my-orders' && (
+          {cleanPath === '/my-orders' && (
             <PedidoCreadoApp onNavigate={handleNavigate} createdData={routeParams} />
           )}
-          {currentPath === '/notifications' && (
+          {cleanPath === '/notifications' && (
             <ClienteNotificacionesApp onNavigate={handleNavigate} />
           )}
         </>
@@ -424,13 +516,13 @@ function AppShell() {
       {/* Vistas KITCHEN */}
       {role === 'KITCHEN' && (
         <>
-          {currentPath === '/kitchen' && (
+          {cleanPath === '/kitchen' && (
             <ComandasCocinaApp
               onNavigate={handleNavigate}
               defaultBranchId={session.branchId}
             />
           )}
-          {currentPath === '/kitchen/detail' && (
+          {cleanPath === '/kitchen/detail' && (
             <DetalleComandaApp
               branchId={routeParams?.branchId || session.branchId || undefined}
               orderId={routeParams?.orderId}
@@ -438,14 +530,14 @@ function AppShell() {
               onNavigate={handleNavigate}
             />
           )}
-          {currentPath === '/kitchen/items' && (
+          {cleanPath === '/kitchen/items' && (
             <PlatillosComandaApp
               branchId={routeParams?.branchId || session.branchId || undefined}
               orderId={routeParams?.orderId}
               onNavigate={handleNavigate}
             />
           )}
-          {currentPath === '/kitchen/notifications' && (
+          {cleanPath === '/kitchen/notifications' && (
             <EventosCocinaApp onNavigate={handleNavigate} />
           )}
         </>
@@ -454,20 +546,22 @@ function AppShell() {
       {/* Vistas GENERAL_MANAGER */}
       {role === 'GENERAL_MANAGER' && (
         <>
-          {currentPath === '/reports/sales' && (
+          {cleanPath === '/reports/sales' && (
             <ReporteVentasApp onNavigate={handleNavigate} />
           )}
-          {currentPath === '/reports/comparison' && (
+          {cleanPath === '/reports/comparison' && (
             <ComparativaSucursalesApp onNavigate={handleNavigate} />
           )}
-          {currentPath === '/reports/top-dishes' && <PlatillosMasVendidosApp />}
-          {currentPath === '/reports/peak-hours' && <HorariosDemandaApp />}
-          {currentPath === '/reports/performance' && <SucursalesAtencionApp />}
+          {cleanPath === '/reports/top-dishes' && <PlatillosMasVendidosApp />}
+          {cleanPath === '/reports/peak-hours' && <HorariosDemandaApp />}
+          {cleanPath === '/reports/performance' && <SucursalesAtencionApp />}
         </>
       )}
-      {isCompanionPath(currentPath) && (
+
+      {/* Rutas delegadas a CompanionApp */}
+      {isCompanionPath(cleanPath) && (
         <CompanionApp
-          key={`${currentPath}#${navNonce}`}
+          key={`${cleanPath}#${navNonce}`}
           session={session}
           path={currentPath}
           routeParams={routeParams}

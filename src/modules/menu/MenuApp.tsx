@@ -186,7 +186,10 @@ function PublicRoute({ session, onAddDish }: { session: MenuSession; onAddDish?:
     setSeatLoading(true); setSeatError(false); setSeat(null);
     fetch('/api/me/table-selection', { credentials: 'include' }).then(response => {
       if (!response.ok) throw new Error('No se pudo consultar la mesa');
-      return response.json() as Promise<{ branchId: string; tableId: string } | null>;
+      if (response.status === 204) return null;
+      return response.text().then(text => text.trim()
+        ? JSON.parse(text) as { branchId: string; tableId: string }
+        : null);
     }).then(value => { if (active) setSeat(value); }).catch(() => { if (active) setSeatError(true); })
       .finally(() => { if (active) setSeatLoading(false); });
     return () => { active = false; };

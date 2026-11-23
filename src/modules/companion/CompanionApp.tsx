@@ -23,6 +23,7 @@ import {
 } from '../billing/BillingApp';
 import { CheckoutEntry } from './CheckoutEntry';
 import { toInnerPath } from './companion-routes';
+import './companion-base.css';
 import './companion.css';
 
 type CompanionAppProps = {

@@ -1,7 +1,7 @@
 import { apiRequest, extractArray } from './api-client';
 
 /**
- * Puentes de integración con módulos de compañero (Módulos 4, 5, 6, 7, 8):
+ * Puentes de integración con módulos  (Módulos 4, 5, 6, 7, 8):
  * - Módulo 4 / 5: Asignación de mesa vigente (/api/me/table-selection, /api/branches/:branchId/tables)
  * - Módulo 6: Facturación y cobro (/api/branches/:branchId/bills, /api/bills/:billId/payments)
  * - Módulo 7: Inventario (/api/management/branches/:branchId/inventory)
