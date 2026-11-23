@@ -8,6 +8,7 @@ test('identifica las rutas de los módulos compañero', () => {
     '/checkout?orderId=abc',
     '/management/inventory',
     '/waiter/billing/xyz',
+    '/branches/branch-id/orders/order-id/billing',
     '/my-receipts/1',
   ]) {
     assert.equal(isCompanionPath(path), true, path);

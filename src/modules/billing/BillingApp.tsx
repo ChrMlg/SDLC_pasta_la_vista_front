@@ -338,7 +338,7 @@ export function TakeawayBilling({ session }: { session: MenuSession }) {
         setSaving(false);
       }
     }}>{saving ? 'Creando...' : 'Crear cuenta'}</button>}
-    {bill && <p role="status">Cuenta creada. <Link to={`/checkout?billId=${encodeURIComponent(bill.id)}`}>Cobrar</Link></p>}
+    {bill && <p role="status">Cuenta creada. <Link to={`/checkout?billId=${encodeURIComponent(bill.id)}`} state={{ takeawayOrderId: orderId }}>Cobrar</Link></p>}
   </main>;
 }
 

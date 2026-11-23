@@ -1,4 +1,4 @@
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { BRANCH_MAP } from '../../shared/api-client';
 import type { MenuSession } from '../menu/MenuApp';
 import { CheckoutPago } from '../billing/CheckoutPago';
@@ -6,16 +6,22 @@ import { CheckoutPago } from '../billing/CheckoutPago';
 type CheckoutEntryProps = {
   session: MenuSession;
   routeParams?: any;
-  onNavigate: (p: string) => void;
+  onNavigate: (p: string, data?: any) => void;
 };
 
 export function CheckoutEntry({ session, routeParams, onNavigate }: CheckoutEntryProps) {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const billId = searchParams.get('billId');
   const orderId = searchParams.get('orderId');
 
   if (billId) {
-    return <CheckoutPago session={session} />;
+    const checkoutState = location.state as { takeawayOrderId?: string } | null;
+    return <CheckoutPago
+      session={session}
+      takeawayOrderId={checkoutState?.takeawayOrderId}
+      onNavigate={onNavigate}
+    />;
   }
   if (!billId && !orderId) {
     return <Navigate replace

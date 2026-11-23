@@ -56,7 +56,7 @@ export async function fetchBranchTables(branchId: string): Promise<BranchTableIn
 export interface CompanionRoutesMap {
   seatingRoute: string;
   reservationsRoute: string;
-  billingCheckoutRoute: (orderOrBillId?: string) => string;
+  billingCheckoutRoute: (orderOrBillId?: string, branchId?: string) => string;
   inventoryRoute: string;
   reviewsRoute: (orderId: string) => string;
 }
@@ -64,7 +64,9 @@ export interface CompanionRoutesMap {
 export const COMPANION_ROUTES: CompanionRoutesMap = {
   seatingRoute: '/seating',
   reservationsRoute: '/reservations',
-  billingCheckoutRoute: (id?: string) => (id ? `/checkout?orderId=${encodeURIComponent(id)}` : '/checkout'),
+  billingCheckoutRoute: (id?: string, branchId?: string) => id
+    ? `/checkout?orderId=${encodeURIComponent(id)}${branchId ? `&branchId=${encodeURIComponent(branchId)}` : ''}`
+    : '/checkout',
   inventoryRoute: '/management/inventory',
   reviewsRoute: (orderId: string) => `/orders/${encodeURIComponent(orderId)}/review`,
 };
